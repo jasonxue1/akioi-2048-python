@@ -109,6 +109,7 @@ jobs:
       CIBW_BEFORE_ALL_MACOS: |
         rustup target add x86_64-apple-darwin
       CIBW_ENVIRONMENT_MACOS: "PATH=$HOME/.cargo/bin:$PATH"
+      MACOSX_DEPLOYMENT_TARGET: "10.12"
     steps:
       - uses: actions/checkout@v4
 
@@ -134,12 +135,19 @@ jobs:
           name: wheels-mac-x86_64
           path: wheelhouse/*.whl
 
-  # ---------- Windows（AMD64 + ARM64） --------------------------------------
+  # ---------- Windows ----------
   windows-wheels:
-    runs-on: windows-latest        # 在 x64 runner 上交叉编译 win_arm64
+    runs-on: windows-latest
     env:
-      CIBW_ARCHS_WINDOWS: "AMD64 ARM64"
+      CIBW_ARCHS_WINDOWS: "ARM64 AMD64"         # 仍然两个架构
       CIBW_SKIP: "cp313-*"
+      CIBW_BEFORE_ALL_WINDOWS: |
+        rustup target add aarch64-pc-windows-msvc        # ← ①
+      CIBW_ENVIRONMENT_WINDOWS: |
+        CARGO_BUILD_TARGET=aarch64-pc-windows-msvc;PATH=%USERPROFILE%\.cargo\bin;%PATH%   # ← ②
+      # 告诉 cibuildwheel 用带 --target 的 build 前端                                 FIXME 行尾分号用 1 行写
+      CIBW_BUILD_FRONTEND: >
+        build -C--config-settings=--target=aarch64-pc-windows-msvc            # ← ③
     steps:
       - uses: actions/checkout@v4
 
