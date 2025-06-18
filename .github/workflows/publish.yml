@@ -1,17 +1,17 @@
-name: Build wheels & publish (skip 3.13)
+name: Build wheels & publish (all mainstream tags, skip 3.13)
 
 on:
-  push:
-    tags: ['v*']          # 只有打 vX.Y.Z 标签才发布
+  push:        # 只有推送版本标签时才发布
+    tags: ['v*']
+  workflow_dispatch:
 
 permissions:
-  contents: read          # 无需写权限
-  # 如果改回 OIDC，可再加 id-token: write
+  contents: read            # 只读源码即可
 
+###############################################################################
+# 1) wheels : 3 OS × 多架构（Linux 同时 manylinux+musllinux）
+###############################################################################
 jobs:
-# ------------------------------------------------------------
-# 1) wheels : 3 OS × 多 Python（自动基于 requires-python，但排除 3.13）
-# ------------------------------------------------------------
   wheels:
     strategy:
       fail-fast: false
@@ -21,90 +21,109 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      # ---------- 缓存 ----------
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.env.HOME || env.HOME }}/.cargo/registry
-            ${{ github.env.HOME || env.HOME }}/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+    # ───── 通用缓存 ──────────────────────────────────────────────────────────
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-      - uses: actions/cache@v4
-        with:
-          path: ${{ github.env.HOME || env.HOME }}/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
 
-      # ---------- 安装 Python & Rust ----------
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+    # ───── 基础工具 ─────────────────────────────────────────────────────────
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'      # 仅运行 cibuildwheel 本身
 
-      # host 侧装 Rust（多平台通用）
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true              # host 侧 Rust
 
-      - name: Install build tooling
-        run: |
-          python -m pip install -U pip
-          # cibuildwheel ≥2.20 已内置 3.13 支持 —— 我们随后跳过即可
-          pip install "cibuildwheel>=2.20" maturin build
+    - name: Install build tooling
+      run: |
+        python -m pip install -U pip
+        # cibuildwheel ≥2.20 带 win-arm64、musllinux 支持
+        pip install "cibuildwheel>=2.20" maturin build
 
-      # ---------- 构建轮子 ----------
-      - name: Build wheels (skip 3.13 & PyPy)
-        run: python -m cibuildwheel --output-dir wheelhouse
-        env:
-          CIBW_SKIP: "pp* cp313-*"
-          # Linux 容器内还需再装一次 rustup
-          CIBW_BEFORE_ALL_LINUX: |
-            curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
-          CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
+    # ───── Linux 额外：QEMU for cross-arch ────────────────────────────────
+    - uses: docker/setup-qemu-action@v3
+      if: matrix.os == 'ubuntu-latest'
+      with: { platforms: all }
 
-      # 保存每个平台的产物
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}
-          path: wheelhouse/*.whl
+    # ───── 构建轮子 ─────────────────────────────────────────────────────────
+    # Linux 与 mac/Win 分开写 env，避免非 Linux 误用 musllinux 选项
+    - name: Build Linux wheels (manylinux + musllinux, multi-arch)
+      if: matrix.os == 'ubuntu-latest'
+      run: python -m cibuildwheel --output-dir wheelhouse
+      env:
+        # 跳过 PyPy & 3.13；其他全部打包
+        CIBW_SKIP: "pp* cp313-*"
+        # 同时产出 manylinux & musllinux
+        CIBW_BUILD: "*manylinux* *musllinux*"
+        # 需要的全部 Linux 架构
+        CIBW_ARCHS_LINUX: "x86_64 i686 aarch64 ppc64le s390x"
+        # manylinux 容器内安装 Rust toolchain
+        CIBW_BEFORE_ALL_LINUX: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+        CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
 
-# ------------------------------------------------------------
-# 2) sdist : 只在 Linux 打一次源包
-# ------------------------------------------------------------
+    - name: Build macOS & Windows wheels
+      if: matrix.os != 'ubuntu-latest'
+      run: python -m cibuildwheel --output-dir wheelhouse
+      env:
+        CIBW_SKIP: "pp* cp313-*"
+        CIBW_ARCHS_MACOS: "universal2"   # 一个 wheel 覆盖 x86_64+arm64 :contentReference[oaicite:2]{index=2}
+        CIBW_ARCHS_WINDOWS: "AMD64 x86 ARM64"   # ARM64 为实验性 :contentReference[oaicite:3]{index=3}
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wheels-${{ matrix.os }}
+        path: wheelhouse/*.whl
+
+###############################################################################
+# 2) sdist : 只在 Linux 打一次
+###############################################################################
   sdist:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - name: Build sdist
-        run: |
-          python -m pip install -U build
-          python -m build --sdist --outdir dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sdist
-          path: dist/*.tar.gz
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with: { python-version: '3.12' }
 
-# ------------------------------------------------------------
-# 3) publish : 汇总所有产物并上传 PyPI
-# ------------------------------------------------------------
+    - name: Build sdist
+      run: |
+        python -m pip install -U build
+        python -m build --sdist --outdir dist
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: sdist
+        path: dist/*.tar.gz
+
+###############################################################################
+# 3) publish : 汇总全部产物 → PyPI
+###############################################################################
   publish:
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: '*'
-          merge-multiple: true          # 合并 wheels + sdist → ./artifact-*
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: '*'
+        merge-multiple: true
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: .
-          skip_existing: true
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        packages_dir: .
+        skip_existing: true
