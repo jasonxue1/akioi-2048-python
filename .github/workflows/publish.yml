@@ -1,60 +1,41 @@
-name: Build and Publish
-
+name: Build wheels & publish to PyPI
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]          # 仅当推送 vX.Y.Z 标签时触发
+  workflow_dispatch:      # 允许手动触发
+
+permissions:
+  contents: read          # 只读即可
+  id-token: write         # OIDC（pypi-token）需要
 
 jobs:
-  build:
-    name: Build wheels
-    runs-on: ubuntu-latest
+  build-and-publish:
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      # maturin-action 会自动准备好 Rust、Python 解释器和 manylinux 交叉编译环境
+      - name: Build & upload wheels
+        id: maturin
+        uses: PyO3/maturin-action@v1
         with:
-          python-version: ${{ matrix.python-version }}
+          command: publish               # 一步到位：构建 + 上传
+          # Linux 上传 sdist，其余平台禁用以防重复
+          args: >-
+            --interpreter 3.8 3.9 3.10 3.11 3.12 3.13
+            ${{ (matrix.os == 'ubuntu-latest') && '--skip-existing' || '--skip-existing --no-sdist' }}
+          manylinux: 2014                # 建议固定 glibc 最小版本
+          pypi-token: ${{ secrets.PYPI_API_TOKEN }}
 
-      - name: Install maturin
-        run: pip install maturin
-
-      - name: Build wheel
-        run: maturin build --release --interpreter python
-
-      - uses: actions/upload-artifact@v4
+      # 可选：构建结束后把生成的 wheel 作为工作流产物保存（调试用）
+      - name: Upload wheels as artifact
+        if: ${{ steps.maturin.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.python-version }}
+          name: wheels-${{ matrix.os }}
           path: target/wheels/*.whl
-
-  publish:
-    name: Publish to PyPI
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all wheels
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: Flatten dist folder
-        run: |
-          mkdir final
-          find dist -name "*.whl" -exec cp {} final/ \;
-
-      - name: Install Twine
-        run: pip install twine
-
-      - name: Publish to PyPI
-        env:
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-          TWINE_USERNAME: __token__
-        run: twine upload final/*
