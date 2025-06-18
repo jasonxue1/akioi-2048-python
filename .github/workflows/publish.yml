@@ -2,137 +2,146 @@ name: Build wheels & publish to PyPI
 
 on:
   push:
-    tags: ['v*']        # 仅推送版本标签时触发
+    tags:
+      - "v*"                     # 仅版本标签触发
 
 permissions:
-  contents: read        # 仅需读仓库
-  id-token: write       # 若改为 OIDC，可用；本文用 token 也无妨
+  contents: read                 # 只读仓库
+  id-token: write                # 若以后想切换 OIDC，可直接用
 
-###############################################################################
-# 环境变量
-###############################################################################
 env:
-  CARGO_INCREMENTAL: 0
-  CARGO_NET_RETRY: 10
-  RUSTUP_MAX_RETRIES: 10
-  # cibuildwheel 用哪个 Python 运行自身，不影响生成的轮子
-  CIBW_BOOTSTRAP_PYTHON: '3.12'
+  # cibuildwheel 自身用哪个 Python 解释器 ─ 不影响产物
+  BOOTSTRAP_PY: "3.12"
+  CARGO_INCREMENTAL: "0"
+  CARGO_NET_RETRY: "10"
+  RUSTUP_MAX_RETRIES: "10"
 
-###############################################################################
-# 1) sdist  -------------------------------------------------------------------
-###############################################################################
+################################################################################
+#  1) 生成 sdist (Linux)                                                        #
+################################################################################
 jobs:
   sdist:
-    name: source distribution
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      # 避免 OOM
-      - uses: pierotofy/set-swap-space@master
-        with: { swap-size-gb: 10 }
+      - name: Add 10 GiB swap (avoid OOM)
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 10
 
-      - uses: actions/setup-python@v5
-        with: { python-version: 3.12 }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.BOOTSTRAP_PY }}
 
-      - name: Build sdist via maturin
+      - name: Build sdist with maturin
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
           maturin-version: 1.8.3
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload sdist artifact
+        uses: actions/upload-artifact@v4
         with:
           name: sdist
           path: dist/*.tar.gz
 
-###############################################################################
-# 2) wheels  ------------------------------------------------------------------
-###############################################################################
+################################################################################
+#  2) 构建 wheels (6 平台 × 所有稳定 CPython，跳过 3.13)                        #
+################################################################################
   wheels:
-    name: wheels (${{ matrix.os }} | ${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux
-          - os: ubuntu-latest   # x86-64
+          # -------- Linux --------
+          - os: ubuntu-latest
             arch: x86_64
-          - os: ubuntu-latest   # aarch64
+          - os: ubuntu-latest
             arch: aarch64
-          # macOS
-          - os: macos-13        # Intel
+          # -------- macOS --------
+          - os: macos-13          # Intel runner
             arch: x86_64
-          - os: macos-15        # Apple Silicon
+          - os: macos-15          # Apple Silicon runner
             arch: arm64
-          # Windows
-          - os: windows-latest  # AMD64
+          # -------- Windows ------
+          - os: windows-latest
             arch: AMD64
-          - os: windows-11-arm  # ARM64
+          - os: windows-11-arm
             arch: ARM64
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      # --- 依赖 / Python -----------------------------------------------------
-      - uses: actions/setup-python@v5
-        with: { python-version: ${{ env.CIBW_BOOTSTRAP_PYTHON }} }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.BOOTSTRAP_PY }}
 
       - name: Install build tools
         run: |
-          python -m pip install -U pip
+          python -m pip install --upgrade pip
           pip install "cibuildwheel>=2.20" maturin
 
-      # --- QEMU：仅 Linux 需要多架构 ----------------------------------------
-      - uses: docker/setup-qemu-action@v3
+      # Cross-arch QEMU (Linux only)
+      - name: Enable QEMU for cross-arch
         if: matrix.os == 'ubuntu-latest'
-        with: { platforms: all }
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
 
-      # --- 交叉编译：macOS x86-64 需装目标 -----------------------------------
-      - name: Add Rust target (macOS Intel wheel)
+      # macOS Intel wheel需要交叉编译
+      - name: Add Rust x86_64 target (macOS-Intel)
         if: matrix.os == 'macos-13'
         run: rustup target add x86_64-apple-darwin
 
-      # --- 编译 wheels -------------------------------------------------------
-      - name: Build wheels with cibuildwheel
+      - name: Build wheels via cibuildwheel
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          # 跳过 PyPy & CPython 3.13
+          # 跳过 CPython 3.13
           CIBW_SKIP: "cp313-*"
-          # 目标架构
+
+          # 仅构建当前矩阵所需架构
           CIBW_ARCHS: ${{ matrix.arch }}
-          # manylinux 对 aarch64 手动指定 2_24，其余 auto
-          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_24"
+
+          # manylinux 镜像：aarch64 / x86_64 固定 2_24
           CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_24"
-          # Linux 容器内装 Rust
+          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_24"
+
+          # 在 manylinux 容器里安装 Rust toolchain
           CIBW_BEFORE_ALL_LINUX: |
-            curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+            curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
-          # macOS 容器内同样追加 cargo bin
+
+          # macOS 也把 cargo bin 加入 PATH
           CIBW_ENVIRONMENT_MACOS: "PATH=$HOME/.cargo/bin:$PATH"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-${{ matrix.arch }}
           path: wheelhouse/*.whl
 
-###############################################################################
-# 3) publish ------------------------------------------------------------------
-###############################################################################
+################################################################################
+#  3) 上传 PyPI                                                                 #
+################################################################################
   publish:
-    name: publish on PyPI
     needs: [sdist, wheels]
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download all wheels & sdist
+        uses: actions/download-artifact@v4
         with:
           path: dist
-          merge-multiple: true    # 合并 wheel+sdist → dist/
+          merge-multiple: true
 
-      - name: Upload to PyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
