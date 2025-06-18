@@ -135,26 +135,22 @@ jobs:
           name: wheels-mac-x86_64
           path: wheelhouse/*.whl
 
-  # ---------- Windows ----------
-  windows-wheels:
+
+###############################################################################
+#  Windows x64  —— 原生                                                     #
+###############################################################################
+  windows-amd64-wheels:
     runs-on: windows-latest
     env:
-      CIBW_ARCHS_WINDOWS: "ARM64 AMD64"         # 仍然两个架构
+      CIBW_ARCHS_WINDOWS: "AMD64"
       CIBW_SKIP: "cp313-*"
-      CIBW_BEFORE_ALL_WINDOWS: |
-        rustup target add aarch64-pc-windows-msvc        # ← ①
-      CIBW_ENVIRONMENT_WINDOWS: |
-        CARGO_BUILD_TARGET=aarch64-pc-windows-msvc;PATH=%USERPROFILE%\.cargo\bin;%PATH%   # ← ②
-      # 告诉 cibuildwheel 用带 --target 的 build 前端                                 FIXME 行尾分号用 1 行写
-      CIBW_BUILD_FRONTEND: >
-        build -C--config-settings=--target=aarch64-pc-windows-msvc            # ← ③
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/cache@v4
         with:
           path: ~\AppData\Local\pip\Cache
-          key: win-pip-${{ hashFiles('pyproject.toml') }}
+          key: win64-pip-${{ hashFiles('pyproject.toml') }}
 
       - uses: actions/setup-python@v5
         with:
@@ -165,12 +161,60 @@ jobs:
           python -m pip install -U pip
           pip install "cibuildwheel>=2.20" maturin build
 
-      - name: Build Windows wheels
+      - name: Build Windows x64 wheels
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows
+          name: wheels-win-amd64
+          path: wheelhouse\*.whl
+
+###############################################################################
+#  Windows ARM64 —— 交叉编译修复                                            #
+###############################################################################
+  windows-arm64-wheels:
+    runs-on: windows-latest
+    env:
+      CIBW_ARCHS_WINDOWS: "ARM64"
+      CIBW_SKIP: "cp313-*"
+
+      # ① 安装 ARM64 Rust 目标
+      CIBW_BEFORE_ALL_WINDOWS: |
+        rustup target add aarch64-pc-windows-msvc
+
+      # ② 让 cargo 使用 ARM64 目标 & 把 cargo bin 放进 PATH
+      CIBW_ENVIRONMENT_WINDOWS: |
+        CARGO_BUILD_TARGET=aarch64-pc-windows-msvc;
+        PATH=%USERPROFILE%\.cargo\bin;%PATH%
+
+      # ③ 指定 build 前端带 --target 和解释器名
+      CIBW_BUILD_FRONTEND: >
+        build
+        -C--config-settings=--target=aarch64-pc-windows-msvc
+        -C--config-settings=--interpreter=python3.11
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: win-arm-pip-${{ hashFiles('pyproject.toml') }}
+
+      - uses: actions/setup-python@v5        # 提供 python3.11 解释器
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: |
+          python -m pip install -U pip
+          pip install "cibuildwheel>=2.20" maturin build
+
+      - name: Build Windows ARM64 wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-win-arm64
           path: wheelhouse\*.whl
 
 ###############################################################################
@@ -203,7 +247,8 @@ jobs:
       - linux-wheels
       - macos-arm64-wheels
       - macos-x86-wheels
-      - windows-wheels
+      - windows-amd64-wheels
+      - windows-arm64-wheels
       - sdist
     runs-on: ubuntu-latest
     steps:
