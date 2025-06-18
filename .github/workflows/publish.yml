@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 ###############################################################################
-# 1) wheel jobs : Linux ×1 | macOS-arm64 ×1 | macOS-x86_64 ×1 | Windows ×1
+# 1) wheel jobs : Linux ×2 | macOS-arm64 ×1 | macOS-x86_64 ×1 | Windows ×1
 ###############################################################################
 jobs:
   # ---------- Linux (x86_64 + aarch64) --------------------------------------
@@ -170,54 +170,6 @@ jobs:
           path: wheelhouse\*.whl
 
 ###############################################################################
-#  Windows ARM64 —— 交叉编译修复                                            #
-###############################################################################
-  windows-arm64-wheels:
-    runs-on: windows-latest
-    env:
-      CIBW_ARCHS_WINDOWS: "ARM64"
-      CIBW_SKIP: "cp313-*"
-
-      # ① 安装 ARM64 Rust 目标
-      CIBW_BEFORE_ALL_WINDOWS: |
-        rustup target add aarch64-pc-windows-msvc
-
-      # ② 让 cargo 使用 ARM64 目标 & 把 cargo bin 放进 PATH
-      CIBW_ENVIRONMENT_WINDOWS: |
-        CARGO_BUILD_TARGET=aarch64-pc-windows-msvc;
-        PATH=%USERPROFILE%\.cargo\bin;%PATH%
-
-      # ③ 指定 build 前端带 --target 和解释器名
-      CIBW_BUILD_FRONTEND: >
-        build
-        -C--config-settings=--target=aarch64-pc-windows-msvc
-        -C--config-settings=--interpreter=python3.11
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\pip\Cache
-          key: win-arm-pip-${{ hashFiles('pyproject.toml') }}
-
-      - uses: actions/setup-python@v5        # 提供 python3.11 解释器
-        with:
-          python-version: "3.11"
-
-      - name: Install build tools
-        run: |
-          python -m pip install -U pip
-          pip install "cibuildwheel>=2.20" maturin build
-
-      - name: Build Windows ARM64 wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheels-win-arm64
-          path: wheelhouse\*.whl
-
-###############################################################################
 # 2) sdist：只在 Linux 打一次 -------------------------------------------------
 ###############################################################################
   sdist:
@@ -248,7 +200,6 @@ jobs:
       - macos-arm64-wheels
       - macos-x86-wheels
       - windows-amd64-wheels
-      - windows-arm64-wheels
       - sdist
     runs-on: ubuntu-latest
     steps:
