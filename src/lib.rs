@@ -4,7 +4,7 @@
 //! Python 使用：
 //! ```python
 //! import akioi_2048 as ak
-//! new_bd, delta, msg = ak.step(board, 2)   # 2 = left
+//! new_bd, delta, msg = ak.step(board, 2)
 //! ```
 
 use pyo3::prelude::*;
@@ -49,10 +49,10 @@ fn step(py_board: &PyAny, dir: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
 
     // ② dir → Action
     let action = match dir {
-        0 => Action::Up,
-        1 => Action::Down,
-        2 => Action::Left,
-        3 => Action::Right,
+        0 => Action::Down,
+        1 => Action::Right,
+        2 => Action::Up,
+        3 => Action::Left,
         _ => return Err(pyo3::exceptions::PyValueError::new_err("dir must be 0-3")),
     };
 
@@ -85,10 +85,10 @@ fn step(py_board: &PyAny, dir: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
 /// 返回 `(new_board, delta_score, victory?)`（不生成随机砖）
 fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
     let rot = match action {
-        Action::Up => 0,
-        Action::Down => 2,
-        Action::Left => 3,
-        Action::Right => 1,
+        Action::Down => 0,  // ↓
+        Action::Up => 2,    // ↑ 旋转 180°
+        Action::Left => 3,  // ← 旋转 -90°
+        Action::Right => 1, // → 旋转 +90°
     };
     let mut work = rotate(*board, rot);
 
@@ -142,48 +142,54 @@ fn rotate(b: Board, k: usize) -> Board {
     }
 }
 
-/// 处理单列，下落合并；返回 `(新列, 得分增量)`
+/// 处理一列：自底向上扫描、合并、下落。
+/// 返回 `(新列, 得分增量)`
+///
+/// * 扫描指针 `r` 从 3 ↓ 0。  
+/// * 输出指针 `w` 从 3 ↓ 0（始终保持列底向上写入）。  
 fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
-    let mut buf = Vec::with_capacity(4);
+    let mut out = [0i32; 4];
+    let mut w: i32 = 3; // 写入位置（从底往上）
     let mut score = 0;
-    let mut i: i32 = 3;
-    while i >= 0 {
-        if col[i as usize] == 0 {
-            if i == 0 {
-                break;
-            }
-            i -= 1;
+    let mut r: i32 = 3; // 读指针（从底往上）
+
+    while r >= 0 {
+        // 跳过空格
+        if col[r as usize] == 0 {
+            r -= 1;
             continue;
         }
-        // 在上方找最近非零
-        let mut j = i - 1;
-        while j >= 0 && col[j as usize] == 0 {
-            j -= 1;
+
+        // 寻找上方第一个非零
+        let mut s = r - 1;
+        while s >= 0 && col[s as usize] == 0 {
+            s -= 1;
         }
-        if j >= 0 {
-            if let Some((merged, add)) = try_merge(
-                col[i as usize],
-                col[j as usize],
-                i == j + 1,
-                &col[(i as usize + 1)..],
-            ) {
-                buf.push(merged);
+
+        // 尝试合并 r 与 s
+        let merged = if s >= 0 {
+            let below_slice = &col[(r as usize + 1)..4]; // r=3 时 slice 为空
+            try_merge(col[r as usize], col[s as usize], r == s + 1, below_slice)
+        } else {
+            None
+        };
+
+        match merged {
+            Some((tile, add)) => {
+                out[w as usize] = tile;
                 score += add;
-                i = if j > 0 { j - 1 } else { 0 };
-                continue;
+                w -= 1;
+                r = s - 1; // 跳过被合并的那块
+            }
+            None => {
+                out[w as usize] = col[r as usize];
+                w -= 1;
+                r -= 1;
             }
         }
-        buf.push(col[i as usize]);
-        if i == 0 {
-            break;
-        }
-        i -= 1;
     }
-    while buf.len() < 4 {
-        buf.push(0);
-    }
-    buf.reverse();
-    ([buf[0], buf[1], buf[2], buf[3]], score)
+
+    (out, score)
 }
 
 /// 判定并执行合并
