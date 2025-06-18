@@ -27,7 +27,7 @@ jobs:
           command: publish               # 一步到位：构建 + 上传
           # Linux 上传 sdist，其余平台禁用以防重复
           args: >-
-            --interpreter 3.8 3.9 3.10 3.11 3.12 3.13
+            --interpreter 3.8 3.9 3.10 3.11 3.12
             ${{ (matrix.os == 'ubuntu-latest') && '--skip-existing' || '--skip-existing --no-sdist' }}
           manylinux: 2014                # 建议固定 glibc 最小版本
           pypi-token: ${{ secrets.PYPI_API_TOKEN }}
