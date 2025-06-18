@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "akioi_2048"
+name = "akioi-2048"
 version = "0.0.0"
 dependencies = [
  "pyo3",

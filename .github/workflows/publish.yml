@@ -1,20 +1,60 @@
-name: Publish to PyPI
+name: Build and Publish
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*"
 
 jobs:
-  publish:
+  build:
+    name: Build wheels
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: PyO3/maturin-action@v1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          command: publish
-          args: --no-sdist --manylinux 2014 -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
-          maturin-version: latest
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build wheel
+        run: maturin build --release --interpreter python
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.python-version }}
+          path: target/wheels/*.whl
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Flatten dist folder
+        run: |
+          mkdir final
+          find dist -name "*.whl" -exec cp {} final/ \;
+
+      - name: Install Twine
+        run: pip install twine
+
+      - name: Publish to PyPI
         env:
-          MATURIN_PYPI_NAME: akioi-2048
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_USERNAME: __token__
+        run: twine upload final/*
