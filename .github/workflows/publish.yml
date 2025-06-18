@@ -1,92 +1,146 @@
-name: Build wheels & publish (all mainstream tags, skip 3.13)
+name: Build wheels & publish
 
 on:
-  push:        # 只有推送版本标签时才发布
-    tags: ['v*']
+  push:
+    tags: ['v*']             # 仅版本标签触发
   workflow_dispatch:
 
 permissions:
-  contents: read            # 只读源码即可
+  contents: read
 
 ###############################################################################
-# 1) wheels : 3 OS × 多架构（Linux 同时 manylinux+musllinux）
+# 1) wheel jobs : Linux ×1  | macOS-arm64 ×1 | macOS-x86_64 ×1 | Windows ×1
 ###############################################################################
 jobs:
-  wheels:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    runs-on: ${{ matrix.os }}
-
+  # ---------- Linux (多架构) ----------
+  linux-wheels:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
-    # ───── 通用缓存 ──────────────────────────────────────────────────────────
+    # 缓存
     - uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-
+        key: linux-cargo-${{ hashFiles('Cargo.lock') }}
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+        key: linux-pip-${{ hashFiles('pyproject.toml') }}
 
-    # ───── 基础工具 ─────────────────────────────────────────────────────────
+    # Python & Rust
     - uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'      # 仅运行 cibuildwheel 本身
-
+      with: { python-version: '3.12' }
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
         profile: minimal
-        override: true              # host 侧 Rust
+        override: true
 
-    - name: Install build tooling
+    - name: Install tools
       run: |
         python -m pip install -U pip
-        # cibuildwheel ≥2.20 带 win-arm64、musllinux 支持
         pip install "cibuildwheel>=2.20" maturin build
 
-    # ───── Linux 额外：QEMU for cross-arch ────────────────────────────────
+    # QEMU→交叉
     - uses: docker/setup-qemu-action@v3
-      if: matrix.os == 'ubuntu-latest'
       with: { platforms: all }
 
-    # ───── 构建轮子 ─────────────────────────────────────────────────────────
-    # Linux 与 mac/Win 分开写 env，避免非 Linux 误用 musllinux 选项
-    - name: Build Linux wheels (manylinux + musllinux, multi-arch)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Build Linux wheels
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
-        # 跳过 PyPy & 3.13；其他全部打包
-        CIBW_SKIP: "pp* cp313-*"
-        # 同时产出 manylinux & musllinux
+        CIBW_SKIP: "cp313-*"
         CIBW_BUILD: "*manylinux* *musllinux*"
-        # 需要的全部 Linux 架构
         CIBW_ARCHS_LINUX: "x86_64 i686 aarch64 ppc64le s390x"
-        # manylinux 容器内安装 Rust toolchain
         CIBW_BEFORE_ALL_LINUX: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
         CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
 
-    - name: Build macOS & Windows wheels
-      if: matrix.os != 'ubuntu-latest'
-      run: python -m cibuildwheel --output-dir wheelhouse
-      env:
-        CIBW_SKIP: "pp* cp313-*"
-        CIBW_ARCHS_MACOS: "universal2"   # 一个 wheel 覆盖 x86_64+arm64 :contentReference[oaicite:2]{index=2}
-        CIBW_ARCHS_WINDOWS: "AMD64 x86 ARM64"   # ARM64 为实验性 :contentReference[oaicite:3]{index=3}
-
     - uses: actions/upload-artifact@v4
       with:
-        name: wheels-${{ matrix.os }}
+        name: wheels-linux
         path: wheelhouse/*.whl
+
+  # ---------- macOS arm64 ----------
+  macos-arm64-wheels:
+    runs-on: macos-latest
+    env:
+      CIBW_ARCHS_MACOS: "arm64"
+      CIBW_SKIP: "cp313-*"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: mac-arm-pip-${{ hashFiles('pyproject.toml') }}
+    - uses: actions/setup-python@v5
+      with: { python-version: '3.12' }
+    - name: Install tools
+      run: |
+        python -m pip install -U pip
+        pip install "cibuildwheel>=2.20" maturin build
+    - name: Build macOS arm64 wheels
+      run: python -m cibuildwheel --output-dir wheelhouse
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wheels-mac-arm64
+        path: wheelhouse/*.whl
+
+  # ---------- macOS x86_64 (交叉编译) ----------
+  macos-x86-wheels:
+    runs-on: macos-latest
+    env:
+      CIBW_ARCHS_MACOS: "x86_64"
+      CIBW_SKIP: "cp313-*"
+      # 交叉编译前为 Rust 装好 intel target
+      CIBW_BEFORE_ALL_MACOS: |
+        rustup target add x86_64-apple-darwin
+      CIBW_ENVIRONMENT_MACOS: "PATH=$HOME/.cargo/bin:$PATH"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: mac-x86-pip-${{ hashFiles('pyproject.toml') }}
+    - uses: actions/setup-python@v5
+      with: { python-version: '3.12' }
+    - name: Install tools
+      run: |
+        python -m pip install -U pip
+        pip install "cibuildwheel>=2.20" maturin build
+    - name: Build macOS x86_64 wheels
+      run: python -m cibuildwheel --output-dir wheelhouse
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wheels-mac-x86_64
+        path: wheelhouse/*.whl
+
+  # ---------- Windows ----------
+  windows-wheels:
+    runs-on: windows-latest
+    env:
+      CIBW_ARCHS_WINDOWS: "AMD64 x86 ARM64"
+      CIBW_SKIP: "cp313-*"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: win-pip-${{ hashFiles('pyproject.toml') }}
+    - uses: actions/setup-python@v5
+      with: { python-version: '3.12' }
+    - name: Install tools
+      run: |
+        python -m pip install -U pip
+        pip install "cibuildwheel>=2.20" maturin build
+    - name: Build Windows wheels
+      run: python -m cibuildwheel --output-dir wheelhouse
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wheels-windows
+        path: wheelhouse\*.whl
 
 ###############################################################################
 # 2) sdist : 只在 Linux 打一次
@@ -97,29 +151,31 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with: { python-version: '3.12' }
-
     - name: Build sdist
       run: |
         python -m pip install -U build
         python -m build --sdist --outdir dist
-
     - uses: actions/upload-artifact@v4
       with:
         name: sdist
         path: dist/*.tar.gz
 
 ###############################################################################
-# 3) publish : 汇总全部产物 → PyPI
+# 3) publish : 汇总所有产物 → PyPI
 ###############################################################################
   publish:
-    needs: [wheels, sdist]
+    needs:
+      - linux-wheels
+      - macos-arm64-wheels
+      - macos-x86-wheels
+      - windows-wheels
+      - sdist
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v4
       with:
         pattern: '*'
         merge-multiple: true
-
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
