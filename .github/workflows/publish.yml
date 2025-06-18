@@ -1,41 +1,70 @@
-name: Build wheels & publish to PyPI
+name: Build wheels & publish
+
 on:
   push:
-    tags: ["v*"]          # 仅当推送 vX.Y.Z 标签时触发
-  workflow_dispatch:      # 允许手动触发
+    tags: ['v*']            # 推送 vX.Y.Z 标签时发布
 
 permissions:
-  contents: read          # 只读即可
-  id-token: write         # OIDC（pypi-token）需要
+  contents: read            # 仅需读取源码
 
 jobs:
   build-and-publish:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
+      # 代码检出
       - uses: actions/checkout@v4
 
-      # maturin-action 会自动准备好 Rust、Python 解释器和 manylinux 交叉编译环境
-      - name: Build & upload wheels
-        id: maturin
-        uses: PyO3/maturin-action@v1
+      # ---------- 缓存 ----------
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
         with:
-          command: publish               # 一步到位：构建 + 上传
-          # Linux 上传 sdist，其余平台禁用以防重复
-          args: >-
-            --interpreter 3.8 3.9 3.10 3.11 3.12
-            ${{ (matrix.os == 'ubuntu-latest') && '--skip-existing' || '--skip-existing --no-sdist' }}
-          manylinux: 2014                # 建议固定 glibc 最小版本
-          pypi-token: ${{ secrets.PYPI_API_TOKEN }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      # 可选：构建结束后把生成的 wheel 作为工作流产物保存（调试用）
-      - name: Upload wheels as artifact
-        if: ${{ steps.maturin.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+      - name: Cache pip
+        uses: actions/cache@v4
         with:
-          name: wheels-${{ matrix.os }}
-          path: target/wheels/*.whl
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+
+      # cibuildwheel 自身需要一个 Python 解释器
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tooling
+        run: |
+          python -m pip install -U pip
+          pip install cibuildwheel build
+
+      # ---------- 构建所有兼容 CPython (自动跳过不符版本) ----------
+      - name: Build wheels via cibuildwheel
+        run: python -m cibuildwheel --output-dir dist
+        env:
+          CIBW_SKIP: "pp*"              # 跳过 PyPy
+          # 在 manylinux 容器里一次性装 Rust
+          CIBW_BEFORE_ALL_LINUX: |
+            curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+          CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
+
+      # ---------- 构建 sdist ----------
+      - name: Build source distribution
+        run: python -m build --sdist --outdir dist
+
+      # 如需调试，可把成品存为工作流产物
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+      # ---------- 发布到 PyPI ----------
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: dist
+          skip_existing: true           # 同版本重复执行时自动跳过
