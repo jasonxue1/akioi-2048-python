@@ -1,7 +1,7 @@
 // src/lib.rs
 //! akioi / oi-2048 backend (pure logic) + PyO3 bridge.
 //!
-//! Python 使用：
+//! Python use：
 //! ```python
 //! import akioi_2048 as ak
 //! new_bd, delta, msg = ak.step(board, 2)
@@ -24,17 +24,37 @@ enum Action {
     Right,
 }
 
-/// ---------- Python 公开函数 -------------------------------------------------
+/// ---------- Python public functions -------------------------------------------------
 
-/// `step(board, dir)`
+/// `step(board, direction)`
 ///
-/// * `board` — 4×4 `list[list[int]]`  
-/// * `dir`   — 0=Up 1=Down 2=Left 3=Right  
+/// Execute a move and (if successful) randomly generate a new tile.
 ///
-/// 返回 `(new_board, delta_score, msg)`  
-/// * `msg = 1` 胜利 / `-1` 失败 / `0` 继续
+/// :param list[list[int]] board:
+///     4×4 board matrix.  
+///     * **Positive values** → Normal value tiles (2, 4, 8, …)  
+///     * **Negative values** → Multiplier tiles  -1=×1, -2=×2, -4=×4; absolute value is the multiplier.  
+///
+/// :param int dir:
+///     Move direction:  
+///     * `0` = **Down**  ↓  
+///     * `1` = **Right** →  
+///     * `2` = **Up**    ↑  
+///     * `3` = **Left**  ←  
+///
+/// :returns: *(new_board, delta_score, msg)*  
+///     * **new_board** `list[list[int]]` Board after the move  
+///     * **delta_score** `int` Score gained/lost from merges this move  
+///     * **msg** `int` Status flag  
+///         * `1`  → A `65536` tile was created  → **Victory**  
+///         * `-1` → No possible moves in any direction → **Game Over**  
+///         * `0`  → Continue playing
+///
+/// :note:
+///     If the move is invalid (board unchanged),  
+///     **no new tile is generated**, `delta_score = 0`, and `msg = 0`.
 #[pyfunction]
-fn step(py_board: &PyAny, dir: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
+fn step(py_board: &PyAny, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
     // ① Python → Rust Board
     let raw: Vec<Vec<i32>> = py_board.extract()?;
     if raw.len() != 4 || raw.iter().any(|r| r.len() != 4) {
@@ -47,13 +67,17 @@ fn step(py_board: &PyAny, dir: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
         }
     }
 
-    // ② dir → Action
-    let action = match dir {
+    // ② direction → Action
+    let action = match direction {
         0 => Action::Down,
         1 => Action::Right,
         2 => Action::Up,
         3 => Action::Left,
-        _ => return Err(pyo3::exceptions::PyValueError::new_err("dir must be 0-3")),
+        _ => {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "direction must be 0-3",
+            ))
+        }
     };
 
     let mut rng = rand::thread_rng();
