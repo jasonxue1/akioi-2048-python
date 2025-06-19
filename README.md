@@ -49,6 +49,12 @@ A tuple **`(new_board, delta_score, msg)`**:
 
 If the move is invalid (board remains unchanged), no new tile is generated, `delta_score = 0`, and `msg = 0`.
 
+### `init()`
+Init a new board
+#### Returns
+A table **`new_board`**  
+- **`new_board: list[list[int]]` A new board
+
 ## Installation
 
 Install via `pip`:

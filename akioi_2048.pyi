@@ -29,3 +29,12 @@ def step(board: List[List[int]], direction: int) -> Tuple[List[List[int]], int, 
         **no new tile is generated**, `delta_score = 0`, and `msg = 0`.
     """
     pass
+
+def init() -> List[List[int]]:
+    """
+    Init a new board
+
+    :returns: *new_board*
+        * **new_board** `list[list[int]]` A new board
+    """
+    pass

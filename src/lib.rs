@@ -1,11 +1,4 @@
-// src/lib.rs
-//! akioi / oi-2048 backend (pure logic) + PyO3 bridge.
-//!
-//! Python use：
-//! ```python
-//! import akioi_2048 as ak
-//! new_bd, delta, msg = ak.step(board, 2)
-//! ```
+use std::vec;
 
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
@@ -24,10 +17,6 @@ enum Action {
     Right,
 }
 
-/// ---------- Python public functions -------------------------------------------------
-
-/// `step(board, direction)`
-///
 /// Execute a move and (if successful) randomly generate a new tile.
 ///
 /// :param list[list[int]] board:
@@ -102,6 +91,20 @@ fn step(py_board: &PyAny, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
     };
 
     Ok((next.iter().map(|r| r.to_vec()).collect(), delta, msg))
+}
+
+/// Init a new board
+///
+/// :returns: *new_board*  
+///     * **new_board** `list[list[int]]` A new board
+#[pyfunction]
+fn init() -> PyResult<Vec<Vec<i32>>> {
+    let mut rng = rand::thread_rng();
+    let mut board: Board = [[0; 4]; 4];
+    spawn_tile(&mut board, &mut rng);
+    spawn_tile(&mut board, &mut rng);
+
+    Ok(board.iter().map(|r| r.to_vec()).collect())
 }
 
 /// ---------- 纯逻辑 ---------------------------------------------------------
@@ -267,9 +270,9 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
     };
 }
 
-/// 注册 Python 模块
 #[pymodule]
 fn akioi_2048(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(step, m)?)?;
+    m.add_function(wrap_pyfunction!(init, m)?)?;
     Ok(())
 }
