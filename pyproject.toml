@@ -16,4 +16,4 @@ bindings = "pyo3"
 module-name = "akioi_2048"
 
 [dependency-groups]
-dev = ["jason-personal-lib>=0.1.2"]
+dev = ["jason-personal-lib>=0.1.2", "tqdm"]
