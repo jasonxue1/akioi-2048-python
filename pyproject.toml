@@ -3,7 +3,7 @@ name = "akioi-2048"
 version = "0.2.1"
 description = "akioi backend: one-step pure function for RL or search"
 authors = [{ name = "jasonxue" }]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 readme = "README.md"
 
 [build-system]
