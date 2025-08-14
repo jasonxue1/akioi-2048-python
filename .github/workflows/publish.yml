@@ -1,9 +1,9 @@
 name: Build wheels & publish (skip 3.13)
 
 on:
-  push:
-    tags:
-      - "v*"          # 仅版本标签触发
+ # push:
+  #  tags:
+     # - "v*"          # 仅版本标签触发
   workflow_dispatch:
 
 permissions:
