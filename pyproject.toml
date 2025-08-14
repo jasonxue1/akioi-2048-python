@@ -3,7 +3,7 @@ name = "akioi-2048"
 version = "0.2.0"
 description = "akioi backend: one-step pure function for RL or search"
 authors = [{ name = "jasonxue" }]
-requires-python = ">=3.8"
+requires-python = ">=3.7"
 readme = "README.md"
 
 [build-system]
@@ -11,9 +11,14 @@ requires = ["maturin>=1.4"]
 build-backend = "maturin"
 
 [tool.maturin]
-include = ["akioi_2048.pyi"]
 bindings = "pyo3"
 module-name = "akioi_2048"
+features = ["python-bindings"]
+include = ["akioi_2048/__init__.py", "akioi_2048/__init__.pyi"]
 
 [dependency-groups]
-dev = ["jason-personal-lib>=0.1.2", "tqdm"]
+dev = [
+    "jason-personal-lib>=0.1.2",
+    "pytest",
+    "tqdm",
+]

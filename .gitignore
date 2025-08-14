@@ -1,2 +1,13 @@
 /target
-*.lock
+/__pycache__/
+*.pyc
+.venv/
+.eggs/
+/dist/
+
+# Pytest
+.pytest_cache/
+
+# Maturin
+*.so
+
