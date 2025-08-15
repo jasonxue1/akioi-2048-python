@@ -32,8 +32,9 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - run: |
-                npx @taplo/cli check
-                npx @taplo/cli lint
+                    taplo fmt --check
+                    taplo lint --default-schema-catalogs
+                    taplo check --default-schema-catalogs
 
     test:
         name: Pytest (uv)
