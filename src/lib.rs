@@ -263,6 +263,8 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
     let &(r, c) = empties.choose(rng).unwrap();
 
     // ③ Generate a tile using weighted probabilities
+    // TODO: The probabilities below do not match the documentation in
+    // `rules/source.php`. Update once the documentation is corrected.
     let p: f64 = rng.random();
     board[r][c] = if p < 0.783 {
         2
