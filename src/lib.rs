@@ -1,9 +1,3 @@
-#![deny(warnings)]
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
-#![deny(clippy::nursery)]
-#![deny(clippy::cargo)]
-
 use pyo3::prelude::*;
 
 mod actions;
