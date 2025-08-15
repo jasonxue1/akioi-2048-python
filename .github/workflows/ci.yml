@@ -20,9 +20,8 @@ jobs:
       - name: Mado check
         uses: akiomik/mado@v0.3.0
       - name: Build extension
-        uses: PyO3/maturin-action@v1
-        with:
-          command: develop
+        run: |
+          uv build
       - name: Run tests
         run: |
           uv run pytest   
