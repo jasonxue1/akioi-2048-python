@@ -1,4 +1,3 @@
-# Copyright (c) 2024 akioi
 """Tests for :func:`akioi_2048.step`."""
 
 import pytest
