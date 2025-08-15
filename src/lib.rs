@@ -132,7 +132,13 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
 }
 
 fn idx_to_action(i: usize) -> Action {
-    [Action::Up, Action::Down, Action::Left, Action::Right][i]
+    match i {
+        0 => Action::Up,
+        1 => Action::Down,
+        2 => Action::Left,
+        3 => Action::Right,
+        _ => unreachable!("index must be 0..=3"),
+    }
 }
 
 /// 旋转棋盘 90°×k（顺时针）
