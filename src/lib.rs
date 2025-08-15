@@ -7,6 +7,16 @@ use rand::{Rng, rng};
 /// 4×4 board grid type
 pub type Board = [[i32; 4]; 4];
 
+trait IsPowerOfTwo {
+    fn is_power_of_two(self) -> bool;
+}
+
+impl IsPowerOfTwo for i32 {
+    fn is_power_of_two(self) -> bool {
+        self > 0 && (self & (self - 1)) == 0
+    }
+}
+
 /// Internal move direction enum
 #[derive(Clone, Copy)]
 enum Action {
@@ -20,7 +30,7 @@ fn validate_board(board: &Board) -> PyResult<()> {
     for row in board.iter() {
         for &v in row.iter() {
             let valid = v == 0
-                || (v >= 2 && v <= 65_536 && (v & (v - 1) == 0))
+                || (v >= 2 && v <= 65_536 && v.is_power_of_two())
                 || matches!(v, -1 | -2 | -4);
             if !valid {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
