@@ -4,9 +4,14 @@
 
 - Rules are under rules directory.
 
-## Development Workflow
+## Run before commit
 
-- Run `cargo clippy`, `uv tool run ruff check .`, and `mado check .` before pushing.
-- Run `uv venv .venv` and `source .venv/bin/activate` then
-  `uv run maturin develop` followed by `uv run pytest` to execute the full
-  test suite.
+```bash
+cargo clippy --all-targets --all-features -- -D warnings
+uv tool run ruff check .
+mado check .
+uv venv .venv
+source .venv/bin/activate
+uv run maturin develop
+uv run pytest
+```
