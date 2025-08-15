@@ -25,6 +25,8 @@ jobs:
           cargo check --all
       - name: Mado check
         uses: akiomik/mado@v0.3.0
+        with:
+          args: check .
       - name: Build extension
         run: |
           uv run --python 3.12 maturin develop --release

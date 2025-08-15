@@ -1,1 +1,1 @@
-from .akioi_2048 import *  # type: ignore F401,F403
+from .akioi_2048 import *  # noqa: F401,F403
