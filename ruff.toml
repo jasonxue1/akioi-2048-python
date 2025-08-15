@@ -1,4 +1,4 @@
-# ruff.toml — 全规则 + 预览 + 激进修复
+
 target-version = "py313"
 fix = true
 unsafe-fixes = true
@@ -9,13 +9,14 @@ unsafe-fixes = true
 
 
 [lint]
-# 全开
+
 select = ["ALL"]
-# 你要狠，那就 extend-select 也给 ALL（功能上等价于上面这行）
+
 extend-select = ["ALL"]
 preview = true
+ignore = ["CPY001"]
 
-# isort（Ruff 内置）最严倾向配置
+
 [lint.isort]
 combine-as-imports = true
 force-wrap-aliases = true
