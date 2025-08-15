@@ -7,7 +7,8 @@
 ## Development Workflow
 
 - Format Rust code with `cargo fmt --all` before committing.
-- Run `cargo test` to execute the full test suite.
+- Format Python code with `ruff format`.
+- Run `maturin develop` followed by `pytest` to execute the full test suite.
 
 ## Notes
 
