@@ -155,7 +155,7 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
 /// Rotate board 90°×k clockwise
 fn rotate(b: Board, k: usize) -> Board {
     let mut r = [[0; 4]; 4];
-    match k % 4 {
+    match k {
         0 => b,
         1 => {
             for i in 0..4 {
@@ -181,7 +181,7 @@ fn rotate(b: Board, k: usize) -> Board {
             }
             r
         }
-        _ => r,
+        _ => unreachable!("k must be 0..=3"),
     }
 }
 
@@ -293,4 +293,15 @@ fn akioi_2048(_py: Python, m: Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(step, &m)?)?;
     m.add_function(wrap_pyfunction!(init, &m)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "k must be 0..=3")]
+    fn rotate_panics_on_invalid_k() {
+        rotate([[0; 4]; 4], 4);
+    }
 }
