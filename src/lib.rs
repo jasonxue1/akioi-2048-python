@@ -64,10 +64,10 @@ const IDX_TO_ACTION: [Action; 4] = [Action::Down, Action::Right, Action::Up, Act
 ///     * `2` = **Up**    ↑
 ///     * `3` = **Left**  ←
 ///
-/// :returns: *(new_board, delta_score, msg)*
-///     * **new_board** `list[list[int]]` Board after the move
-///     * **delta_score** `int` Score gained or lost from merges this move
-///     * **msg** `int` Status flag
+/// :returns: *(`new_board`, `delta_score`, `msg`)*
+///     * `new_board` `list[list[int]]` Board after the move
+///     * `delta_score` `int` Score gained or lost from merges this move
+///     * `msg` `int` Status flag
 ///         * `1`  → A `65536` tile was created → **Victory**
 ///         * `-1` → No possible moves in any direction → **Game Over**
 ///         * `0`  → Continue playing
@@ -114,8 +114,8 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
 
 /// Initialize a new board with two tiles
 ///
-/// :returns: *new_board*
-///     * **new_board** `list[list[int]]` A fresh board
+/// :returns: `new_board`
+///     * `new_board` `list[list[int]]` A fresh board
 #[pyfunction]
 fn init() -> Vec<Vec<i32>> {
     let mut rng = rng();
