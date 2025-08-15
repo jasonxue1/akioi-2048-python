@@ -32,7 +32,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Taplo check
-            - run: |
+              run: |
                     taplo fmt --check
                     taplo lint --default-schema-catalogs
                     taplo check --default-schema-catalogs
