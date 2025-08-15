@@ -6,7 +6,7 @@
 
 ## Development Workflow
 
-- Run `cargo check`, `uv tool run ruff check .`, and `mado check .` before pushing.
+- Run `cargo clippy`, `uv tool run ruff check .`, and `mado check .` before pushing.
 - Run `uv run maturin develop` followed by `uv run pytest` to execute the full
   test suite.
 
