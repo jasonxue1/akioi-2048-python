@@ -1,5 +1,7 @@
-warn = "clippy::all"
-warn = "clippy::pedantic"
-warn = "clippy::nursery"
-warn = "clippy::cargo"
-deny = "warnings"
+deny = [
+    "warnings",
+    "clippy::all",
+    "clippy::pedantic",
+    "clippy::nursery",
+    "clippy::cargo"
+]
