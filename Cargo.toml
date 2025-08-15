@@ -24,3 +24,23 @@ pyo3 = { version = "0.25.1", default-features = false, features = ["macros"] }
 
 [profile.dev]
 incremental = true # 提升二次编译速度
+
+
+[workspace.lints.rust]
+# rustc 自带
+warnings = "deny"                # 所有警告当错误
+rust-2021-idioms = "deny"         # 严格习惯用法检查（按项目 edition 调整）
+missing_docs = "deny"             # 公共 API 必须写文档
+unused_must_use = "deny"          # 必须处理 #[must_use] 返回值
+unreachable_pub = "deny"          # 避免暴露内部符号
+
+[lints.clippy]
+# 所有主要组
+all = "deny"                      # Clippy 基础合集
+cargo = "deny"                    # Cargo.toml 相关
+pedantic = "deny"                  # 吹毛求疵模式
+nursery = "deny"                   # 实验性规则
+restriction = "deny"               # 极限限制（包含 unwrap_used 等）
+
+# 注意：restriction 里已含 unwrap_used/expect_used/dbg_macro 等，
+# 不用再单列，避免重复
