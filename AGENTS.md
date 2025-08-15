@@ -4,6 +4,10 @@
 
 - Rules are under rules directory.
 
+## Importance
+
+Add of files to git by `git add .`
+
 ## Run before commit
 
 ## Format
