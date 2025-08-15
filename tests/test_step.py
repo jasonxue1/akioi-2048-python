@@ -119,3 +119,14 @@ def test_step_rejects_unknown_negative_multiplier():
     ]
     with pytest.raises(ValueError):
         ak.step(board, 0)
+
+
+def test_step_rejects_one():
+    board = [
+        [1, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    with pytest.raises(ValueError):
+        ak.step(board, 0)
