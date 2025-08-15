@@ -5,7 +5,7 @@ set -e
 cargo fmt --all
 
 # Format Python code
-uv run --python 3.12 ruff format
+uv tool run ruff format
 
 # Format Markdown files
 files=$(git ls-files '*.md')
