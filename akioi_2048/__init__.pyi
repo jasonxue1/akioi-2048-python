@@ -9,7 +9,7 @@ def step(board: List[List[int]], direction: int) -> Tuple[List[List[int]], int, 
         * **Positive values** → Normal value tiles (2, 4, 8, …)
         * **Negative values** → Multiplier tiles  -1=×1, -2=×2, -4=×4; absolute value is the multiplier.
 
-    :param int dir:
+    :param int direction:
         Move direction:
         * `0` = **Down**  ↓
         * `1` = **Right** →
@@ -28,7 +28,7 @@ def step(board: List[List[int]], direction: int) -> Tuple[List[List[int]], int, 
         If the move is invalid (board unchanged),
         **no new tile is generated**, `delta_score = 0`, and `msg = 0`.
     """
-    pass
+    ...
 
 def init() -> List[List[int]]:
     """
@@ -37,4 +37,4 @@ def init() -> List[List[int]]:
     :returns: *new_board*
         * **new_board** `list[list[int]]` A new board
     """
-    pass
+    ...
