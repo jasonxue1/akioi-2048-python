@@ -1,5 +1,4 @@
-
-
+# Copyright (c) 2024 akioi
 """Tests for :func:`akioi_2048.init`."""
 
 import akioi_2048 as ak
@@ -8,7 +7,11 @@ ALLOWED = {-2, -1, 2, 4}
 
 
 def flatten(board: list[list[int]]) -> list[int]:
-    """Flatten a board into a single list."""
+    """Flatten a board into a single list.
+
+    Returns:
+        list[int]: A flattened list of all tile values.
+    """
     return [c for row in board for c in row]
 
 
