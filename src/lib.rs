@@ -4,10 +4,10 @@ use pyo3::types::PyAny;
 use rand::prelude::IndexedRandom;
 use rand::{Rng, rng};
 
-/// 4×4 棋盘类型
+/// 4×4 board grid type
 pub type Board = [[i32; 4]; 4];
 
-/// 内部方向枚举
+/// Internal move direction enum
 #[derive(Clone, Copy)]
 enum Action {
     Up,
@@ -16,34 +16,34 @@ enum Action {
     Right,
 }
 
-/// Execute a move and (if successful) randomly generate a new tile.
+/// Apply one move; if the board changes a new tile is spawned at random.
 ///
 /// :param list[list[int]] board:
-///     4×4 board matrix.  
-///     * **Positive values** → Normal value tiles (2, 4, 8, …)  
-///     * **Negative values** → Multiplier tiles  -1=×1, -2=×2, -4=×4; absolute value is the multiplier.  
+///     4×4 board matrix.
+///     * **Positive values** → Normal value tiles (2, 4, 8, …)
+///     * **Negative values** → Multiplier tiles -1=×1, -2=×2, -4=×4; absolute value is the multiplier.
 ///
 /// :param int dir:
-///     Move direction:  
-///     * `0` = **Down**  ↓  
-///     * `1` = **Right** →  
-///     * `2` = **Up**    ↑  
-///     * `3` = **Left**  ←  
+///     Move direction:
+///     * `0` = **Down**  ↓
+///     * `1` = **Right** →
+///     * `2` = **Up**    ↑
+///     * `3` = **Left**  ←
 ///
-/// :returns: *(new_board, delta_score, msg)*  
-///     * **new_board** `list[list[int]]` Board after the move  
-///     * **delta_score** `int` Score gained/lost from merges this move  
-///     * **msg** `int` Status flag  
-///         * `1`  → A `65536` tile was created  → **Victory**  
-///         * `-1` → No possible moves in any direction → **Game Over**  
+/// :returns: *(new_board, delta_score, msg)*
+///     * **new_board** `list[list[int]]` Board after the move
+///     * **delta_score** `int` Score gained or lost from merges this move
+///     * **msg** `int` Status flag
+///         * `1`  → A `65536` tile was created → **Victory**
+///         * `-1` → No possible moves in any direction → **Game Over**
 ///         * `0`  → Continue playing
 ///
 /// :note:
-///     If the move is invalid (board unchanged),  
+///     If the move is invalid (board unchanged),
 ///     **no new tile is generated**, `delta_score = 0`, and `msg = 0`.
 #[pyfunction]
 fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
-    // ① Python → Rust Board
+    // ① Convert Python list into a Rust board
     let raw: Vec<Vec<i32>> = py_board.extract()?;
     if raw.len() != 4 || raw.iter().any(|r| r.len() != 4) {
         return Err(pyo3::exceptions::PyValueError::new_err("board must be 4×4"));
@@ -55,7 +55,7 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
         }
     }
 
-    // ② direction → Action
+    // ② Map `direction` to `Action`
     let action = match direction {
         0 => Action::Down,
         1 => Action::Right,
@@ -70,15 +70,15 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
 
     let mut rng = rng();
 
-    // ③ 执行一步
+    // ③ Perform one logical step
     let (mut next, delta, victory) = single_step(&board, action);
 
     let moved = next != board;
     if moved {
-        spawn_tile(&mut next, &mut rng); // 规则：有效移动后随机生成一块
+        spawn_tile(&mut next, &mut rng); // rule: spawn a tile after a valid move
     }
 
-    // ④ 判断失败（四方向都无法动）
+    // ④ Check failure (no moves in any direction)
     let dead = !moved && (0..4).all(|d| single_step(&next, idx_to_action(d)).0 == next);
 
     let msg = if victory {
@@ -92,10 +92,10 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
     Ok((next.iter().map(|r| r.to_vec()).collect(), delta, msg))
 }
 
-/// Init a new board
+/// Initialize a new board with two tiles
 ///
-/// :returns: *new_board*  
-///     * **new_board** `list[list[int]]` A new board
+/// :returns: *new_board*
+///     * **new_board** `list[list[int]]` A fresh board
 #[pyfunction]
 fn init() -> PyResult<Vec<Vec<i32>>> {
     let mut rng = rng();
@@ -106,15 +106,15 @@ fn init() -> PyResult<Vec<Vec<i32>>> {
     Ok(board.iter().map(|r| r.to_vec()).collect())
 }
 
-/// ---------- 纯逻辑 ---------------------------------------------------------
+/// ---------- Pure logic ---------------------------------------------------------
 
-/// 返回 `(new_board, delta_score, victory?)`（不生成随机砖）
+/// Return `(new_board, delta_score, victory?)` (no random tile spawn)
 fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
     let rot = match action {
         Action::Down => 0,  // ↓
-        Action::Up => 2,    // ↑ 旋转 180°
-        Action::Left => 3,  // ← 旋转 -90°
-        Action::Right => 1, // → 旋转 +90°
+        Action::Up => 2,    // ↑ rotate 180°
+        Action::Left => 3,  // ← rotate -90°
+        Action::Right => 1, // → rotate +90°
     };
     let mut work = rotate(*board, rot);
 
@@ -135,7 +135,7 @@ fn idx_to_action(i: usize) -> Action {
     [Action::Up, Action::Down, Action::Left, Action::Right][i]
 }
 
-/// 旋转棋盘 90°×k（顺时针）
+/// Rotate board 90°×k clockwise
 fn rotate(b: Board, k: usize) -> Board {
     let mut r = [[0; 4]; 4];
     match k % 4 {
@@ -168,33 +168,33 @@ fn rotate(b: Board, k: usize) -> Board {
     }
 }
 
-/// 处理一列：自底向上扫描、合并、下落。
-/// 返回 `(新列, 得分增量)`
+/// Process one column: scan upward, merge, and drop tiles.
+/// Return `(new_column, score_delta)`
 ///
-/// * 扫描指针 `r` 从 3 ↓ 0。  
-/// * 输出指针 `w` 从 3 ↓ 0（始终保持列底向上写入）。  
+/// * Scan pointer `r` from 3 down to 0.
+/// * Write pointer `w` from 3 down to 0 (always filling bottom up).
 fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
     let mut out = [0i32; 4];
-    let mut w: i32 = 3; // 写入位置（从底往上）
+    let mut w: i32 = 3; // write position (bottom to top)
     let mut score = 0;
-    let mut r: i32 = 3; // 读指针（从底往上）
+    let mut r: i32 = 3; // read pointer (bottom to top)
 
     while r >= 0 {
-        // 跳过空格
+        // skip empty cells
         if col[r as usize] == 0 {
             r -= 1;
             continue;
         }
 
-        // 寻找上方第一个非零
+        // find first non-zero above
         let mut s = r - 1;
         while s >= 0 && col[s as usize] == 0 {
             s -= 1;
         }
 
-        // 尝试合并 r 与 s
+        // try merging r and s
         let merged = if s >= 0 {
-            let below_slice = &col[(r as usize + 1)..4]; // r=3 时 slice 为空
+            let below_slice = &col[(r as usize + 1)..4]; // slice is empty if r=3
             try_merge(col[r as usize], col[s as usize], r == s + 1, below_slice)
         } else {
             None
@@ -205,7 +205,7 @@ fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
                 out[w as usize] = tile;
                 score += add;
                 w -= 1;
-                r = s - 1; // 跳过被合并的那块
+                r = s - 1; // skip the merged tile
             }
             None => {
                 out[w as usize] = col[r as usize];
@@ -218,17 +218,17 @@ fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
     (out, score)
 }
 
-/// 判定并执行合并
+/// Determine and perform a merge
 fn try_merge(a: i32, b: i32, adjacent: bool, below: &[i32]) -> Option<(i32, i32)> {
-    // 数值 + 数值
+    // numeric + numeric
     if a > 0 && b > 0 && a == b && a < 65_536 {
         return Some((a + b, a + b));
     }
-    // 倍增 + 倍增
+    // multiplier + multiplier
     if a < 0 && b < 0 && a == b && a > -4 {
         return Some((a * 2, a * 2));
     }
-    // 数值 + 倍增
+    // numeric + multiplier
     if a * b < 0 && adjacent && (below.is_empty() || below.iter().all(|&v| v != 0)) {
         let num = if a > 0 { a } else { b };
         let mul = if a < 0 { a } else { b };
@@ -238,9 +238,9 @@ fn try_merge(a: i32, b: i32, adjacent: bool, below: &[i32]) -> Option<(i32, i32)
     None
 }
 
-/// 随机在空格生成一块新砖（权重同网页规则）
+/// Spawn a random tile on an empty cell (same probabilities as the web version)
 fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
-    // ① 收集空格坐标（不再用闭包，避免 move）
+    // ① Gather empty coordinates (avoid closure to skip move)
     let mut empties = Vec::new();
     for r in 0..4 {
         for c in 0..4 {
@@ -253,10 +253,10 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
         return;
     }
 
-    // ② 随机挑选位置
+    // ② Pick a random position
     let &(r, c) = empties.choose(rng).unwrap();
 
-    // ③ 按权重生成方块
+    // ③ Generate a tile using weighted probabilities
     let p: f64 = rng.random();
     board[r][c] = if p < 0.783 {
         2

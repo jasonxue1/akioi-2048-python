@@ -1,7 +1,7 @@
 # akioi-2048
 
 
-A Python implementation of a customizable 2048 game engine with support for multiplier tiles and score tracking. Requires Python 3.8 or later.
+Python implementation of a customizable 2048 engine with multiplier tiles and score tracking. Requires Python 3.8 or later.
 
 ## Features
 
@@ -14,46 +14,46 @@ A Python implementation of a customizable 2048 game engine with support for mult
 
 ### `step(board, direction)`
 
-Executes one move in the given direction and, if the move changes the board, generates a new tile.
+Apply one move. If the board changes, a new tile is spawned in a random empty cell.
 
 #### Parameters
 
-- **`board: list[list[int]]`**  
-  4×4 board matrix.  
-  - Positive integers represent normal value tiles (2, 4, 8, …).  
-  - Negative integers represent multiplier tiles:  
-    - `-1` = ×1  
-    - `-2` = ×2  
-    - `-4` = ×4  
-    The absolute value of the number is the multiplier.
+- **`board: list[list[int]]`** – 4×4 board matrix.
+  - Positive integers are normal tiles (2, 4, 8, …)
+  - Negative integers are multiplier tiles:
+    - `-1` = ×1
+    - `-2` = ×2
+    - `-4` = ×4
+    The absolute value is the multiplier.
 
-- **`direction: int`**  
-  Direction of movement:  
-  - `0` → **Down** ↓  
-  - `1` → **Right** →  
-  - `2` → **Up** ↑  
-  - `3` → **Left** ←  
+- **`direction: int`** – Movement direction
+  - `0` → **Down** ↓
+  - `1` → **Right** →
+  - `2` → **Up** ↑
+  - `3` → **Left** ←
 
 #### Returns
 
-A tuple **`(new_board, delta_score, msg)`**:
+Tuple **`(new_board, delta_score, state)`**:
 
-- **`new_board: list[list[int]]`** — Board after the move  
-- **`delta_score: int`** — Score gained from merges during this move  
-- **`msg: int`** — Game state indicator:
-  - `1` → A tile with value 65536 was created → **Victory**
+- **`new_board: list[list[int]]`** – Board after the move
+- **`delta_score: int`** – Score gained or lost from merges
+- **`state: int`** – Game state indicator
+  - `1` → Created a 65536 tile → **Victory**
   - `-1` → No legal moves left → **Game Over**
   - `0` → Game continues
 
 #### Notes
 
-If the move is invalid (board remains unchanged), no new tile is generated, `delta_score = 0`, and `msg = 0`.
+If the board stays the same, no tile is spawned, `delta_score = 0`, and `state = 0`.
 
 ### `init()`
-Init a new board
+
+Create a new board with two starting tiles.
+
 #### Returns
-A table **`new_board`**  
-- **`new_board: list[list[int]]` A new board
+
+- **`new_board: list[list[int]]`** – Fresh board ready for play
 
 ## Installation
 
