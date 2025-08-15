@@ -69,16 +69,7 @@ const IDX_TO_ACTION: [Action; 4] = [Action::Down, Action::Right, Action::Up, Act
 #[pyfunction]
 fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
     // ① Convert Python list into a Rust board
-    let raw: Vec<Vec<i32>> = py_board.extract()?;
-    if raw.len() != 4 || raw.iter().any(|r| r.len() != 4) {
-        return Err(pyo3::exceptions::PyValueError::new_err("board must be 4×4"));
-    }
-    let mut board: Board = [[0; 4]; 4];
-    for (r, row) in raw.iter().enumerate() {
-        for (c, &v) in row.iter().enumerate() {
-            board[r][c] = v;
-        }
-    }
+    let board: Board = py_board.extract()?;
 
     validate_board(&board)?;
 
