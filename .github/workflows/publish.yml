@@ -1,4 +1,4 @@
-name: Release
+name: Build and Publish
 
 on:
     push:
@@ -7,13 +7,10 @@ on:
 permissions:
     contents: read
 
-###############################################################################
-# Build wheels for Linux (x86_64 & aarch64), macOS (arm64 & x86_64),
-# and Windows (x86 & x64) across Python versions 3.8 through 3.13.
-###############################################################################
+# Build wheels for Linux, macOS, and Windows across Python versions 3.8–3.13.
 jobs:
-    # ---------- Linux x86_64 --------------------------------------------------
-    linux-x86-wheels:
+    # Build wheels for Linux x86_64
+    build-linux-x86_64:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -59,8 +56,8 @@ jobs:
                   name: wheels-linux-x86_64
                   path: dist/*.whl
 
-    # ---------- Linux aarch64 -------------------------------------------------
-    linux-arm-wheels:
+    # Build wheels for Linux aarch64
+    build-linux-aarch64:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -110,8 +107,8 @@ jobs:
                   name: wheels-linux-aarch64
                   path: dist/*.whl
 
-    # ---------- macOS arm64 ---------------------------------------------------
-    macos-arm64-wheels:
+    # Build wheels for macOS arm64
+    build-macos-arm64:
         runs-on: macos-latest
         env:
             CIBW_ARCHS_MACOS: "arm64"
@@ -141,8 +138,8 @@ jobs:
                   name: wheels-mac-arm64
                   path: dist/*.whl
 
-    # ---------- macOS x86_64 --------------------------------------------------
-    macos-x86-wheels:
+    # Build wheels for macOS x86_64
+    build-macos-x86_64:
         runs-on: macos-latest
         env:
             CIBW_ARCHS_MACOS: "x86_64"
@@ -176,10 +173,8 @@ jobs:
                   name: wheels-mac-x86_64
                   path: dist/*.whl
 
-    #############################################################################
-    # Windows x64 --------------------------------------------------------------
-    #############################################################################
-    windows-amd64-wheels:
+    # Build wheels for Windows x64
+    build-windows-amd64:
         runs-on: windows-latest
         env:
             CIBW_ARCHS_WINDOWS: "AMD64"
@@ -209,10 +204,8 @@ jobs:
                   name: wheels-win-amd64
                   path: dist\*.whl
 
-    #############################################################################
-    # Windows x86 --------------------------------------------------------------
-    #############################################################################
-    windows-x86-wheels:
+    # Build wheels for Windows x86
+    build-windows-x86:
         runs-on: windows-latest
         env:
             CIBW_ARCHS_WINDOWS: "x86"
@@ -242,8 +235,8 @@ jobs:
                   name: wheels-win-x86
                   path: dist\*.whl
 
-    # ---------- sdist ---------------------------------------------------------
-    sdist:
+    # Build source distribution
+    build-sdist:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -262,16 +255,16 @@ jobs:
                   name: sdist
                   path: dist/*.tar.gz
 
-    # ---------- publish -------------------------------------------------------
+    # Publish to PyPI after all builds complete
     publish:
         needs:
-            - linux-x86-wheels
-            - linux-arm-wheels
-            - macos-arm64-wheels
-            - macos-x86-wheels
-            - windows-amd64-wheels
-            - windows-x86-wheels
-            - sdist
+            - build-linux-x86_64
+            - build-linux-aarch64
+            - build-macos-arm64
+            - build-macos-x86_64
+            - build-windows-amd64
+            - build-windows-x86
+            - build-sdist
         runs-on: ubuntu-latest
         steps:
             - uses: actions/download-artifact@v4
