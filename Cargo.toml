@@ -11,7 +11,7 @@ crate-type = ["cdylib", "rlib"] # 生成 Python 扩展
 default = []
 python-bindings = [
   "pyo3/extension-module", # 产出可导入的 .so/.pyd
-  "pyo3/abi3-py37",       # 与 ≥3.7 的解释器 ABI 兼容
+  "pyo3/abi3-py38",       # 与 ≥3.8 的解释器 ABI 兼容
 ]
 
 
