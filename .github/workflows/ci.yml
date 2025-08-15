@@ -63,4 +63,6 @@ jobs:
               with:
                   components: clippy
             - name: Run clippy
-              run: cargo clippy
+              run: |
+                  cargo check
+                  cargo clippy
