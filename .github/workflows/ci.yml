@@ -19,12 +19,9 @@ jobs:
         uses: astral-sh/ruff-action@v3
       - name: Mado check
         uses: akiomik/mado@v0.3.0
-      - name: Build extension
-        run: |
-          uv build
       - name: Run tests
         run: |
-          uv run pytest   
+          uv test pytest   
       - name: Cargo clippy
         run: |
           cargo clippy
