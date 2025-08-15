@@ -1,1 +1,2 @@
-rules/* linguist-vendored
+rules/** linguist-vendored
+tests/** linguist-vendored
