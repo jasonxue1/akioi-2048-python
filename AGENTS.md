@@ -6,6 +6,16 @@
 
 ## Run before commit
 
+## Format
+```bash
+cargo fmt --all
+uv tool run ruff format
+npx prettier --write "**/*.{md,yml,yaml,js,ts,json}"
+```
+
+
+## Check
+
 ```bash
 cargo clippy --all-targets --all-features -- -D warnings
 uv tool run ruff check .
