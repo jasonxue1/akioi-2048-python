@@ -2,8 +2,7 @@
 
 ## Project Overview
 
-- This repository is a Rust implementation of the [AK IOI 2048 wiki](https://apps.ak-ioi.com/oi-2048/wiki/).
-- Refer to the wiki for additional documentation and gameplay details.
+- Rules are under rules directory.
 
 ## Development Workflow
 
