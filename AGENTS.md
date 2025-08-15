@@ -2,15 +2,17 @@
 
 ## Project Overview
 
-- Rules are under rules directory.
+- Game rules reside under the `rules/` directory.
 
-## Importance
+## Workflow
 
-Add of files to git by `git add .`
+### Staging
 
-## Run before commit
+- Always stage changes using `git add .`.
 
-## Format
+### Formatting
+
+Run the following commands before committing:
 
 ```bash
 cargo fmt --all
@@ -19,7 +21,9 @@ npx prettier --write "**/*.{md,yml,yaml,js,ts,json}"
 taplo format "**/*.toml"
 ```
 
-## Check
+### Checks
+
+Execute these checks to validate your changes:
 
 ```bash
 cargo clippy --all-targets --all-features -- -D warnings
