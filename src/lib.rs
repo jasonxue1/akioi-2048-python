@@ -1,9 +1,8 @@
-use std::vec;
-
 use pyo3::prelude::*;
 use pyo3::types::PyAny;
 
-use rand::{prelude::*, seq::SliceRandom};
+use rand::prelude::IndexedRandom;
+use rand::{Rng, rng};
 
 /// 4×4 棋盘类型
 pub type Board = [[i32; 4]; 4];
@@ -43,7 +42,7 @@ enum Action {
 ///     If the move is invalid (board unchanged),  
 ///     **no new tile is generated**, `delta_score = 0`, and `msg = 0`.
 #[pyfunction]
-fn step(py_board: &PyAny, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
+fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
     // ① Python → Rust Board
     let raw: Vec<Vec<i32>> = py_board.extract()?;
     if raw.len() != 4 || raw.iter().any(|r| r.len() != 4) {
@@ -65,11 +64,11 @@ fn step(py_board: &PyAny, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
         _ => {
             return Err(pyo3::exceptions::PyValueError::new_err(
                 "direction must be 0-3",
-            ))
+            ));
         }
     };
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rng();
 
     // ③ 执行一步
     let (mut next, delta, victory) = single_step(&board, action);
@@ -99,7 +98,7 @@ fn step(py_board: &PyAny, direction: u8) -> PyResult<(Vec<Vec<i32>>, i32, i8)> {
 ///     * **new_board** `list[list[int]]` A new board
 #[pyfunction]
 fn init() -> PyResult<Vec<Vec<i32>>> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rng();
     let mut board: Board = [[0; 4]; 4];
     spawn_tile(&mut board, &mut rng);
     spawn_tile(&mut board, &mut rng);
@@ -258,7 +257,7 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
     let &(r, c) = empties.choose(rng).unwrap();
 
     // ③ 按权重生成方块
-    let p: f64 = rng.gen();
+    let p: f64 = rng.random();
     board[r][c] = if p < 0.783 {
         2
     } else if p < 0.861 {
@@ -271,8 +270,8 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
 }
 
 #[pymodule]
-fn akioi_2048(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(step, m)?)?;
-    m.add_function(wrap_pyfunction!(init, m)?)?;
+fn akioi_2048(_py: Python, m: Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(step, &m)?)?;
+    m.add_function(wrap_pyfunction!(init, &m)?)?;
     Ok(())
 }
