@@ -22,3 +22,6 @@ dev = [
     "pytest>=7.4.4,<8",
     "ruff>=0.12.9",
 ]
+
+[tool.ruff.lint]
+ignore = ["F401", "F403"]

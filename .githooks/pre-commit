@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+# Format Rust code
+cargo fmt --all
+
+# Format Python code
+uv run --python 3.12 ruff format
+
+# Format Markdown files
+files=$(git ls-files '*.md')
+if [ -n "$files" ]; then
+  for f in $files; do
+    cat "$f" | npx -y @fsouza/prettierd "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  done
+fi
+
+# Ensure all files are added after formatting
+git add -A

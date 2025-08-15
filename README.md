@@ -1,6 +1,5 @@
 # akioi-2048
 
-
 Python implementation of a customizable 2048 engine with multiplier tiles and score tracking. Requires Python 3.8 or later.
 
 ## Features
@@ -24,7 +23,7 @@ Apply one move. If the board changes, a new tile is spawned in a random empty ce
     - `-1` = ×1
     - `-2` = ×2
     - `-4` = ×4
-    The absolute value is the multiplier.
+      The absolute value is the multiplier.
 
 - **`direction: int`** – Movement direction
   - `0` → **Down** ↓
@@ -61,4 +60,4 @@ Install via `pip`:
 
 ```bash
 pip3 install akioi-2048
-````
+```
