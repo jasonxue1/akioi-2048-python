@@ -12,7 +12,7 @@ pub fn validate_board(board: &Board) -> PyResult<()> {
     for row in board {
         for &tile in row {
             let valid = tile == 0
-                || ((2..=65_536).contains(&tile) && is_power_of_two(tile))
+                || ((2..=0x0001_0000).contains(&tile) && is_power_of_two(tile))
                 || matches!(tile, -1 | -2 | -4);
             if !valid {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(

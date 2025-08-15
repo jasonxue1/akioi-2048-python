@@ -81,7 +81,7 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
         }
     }
     let next = rotate(work, (4 - rot) % 4);
-    let victory = next.iter().flatten().any(|&v| v == 65_536);
+    let victory = next.iter().flatten().any(|&v| v == 0x0001_0000);
     (next, delta, victory)
 }
 
@@ -154,7 +154,7 @@ pub fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
 /// Determine and perform a merge
 fn try_merge(a: i32, b: i32, adjacent: bool, below: &[i32]) -> Option<(i32, i32)> {
     // numeric + numeric
-    if a > 0 && b > 0 && a == b && a < 65_536 {
+    if a > 0 && b > 0 && a == b && a < 0x0001_0000 {
         return Some((a + b, a + b));
     }
     // multiplier + multiplier
@@ -166,7 +166,7 @@ fn try_merge(a: i32, b: i32, adjacent: bool, below: &[i32]) -> Option<(i32, i32)
         let num = if a > 0 { a } else { b };
         let mul = if a < 0 { a } else { b };
         let mut v = num * mul.abs();
-        v = v.min(65_536);
+        v = v.min(0x0001_0000);
         return Some((v, v));
     }
     None
@@ -188,7 +188,9 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
     }
 
     // ② Pick a random position
-    let &(r, c) = empties.choose(rng).unwrap();
+    let Some(&(r, c)) = empties.choose(rng) else {
+        return;
+    };
 
     // ③ Generate a tile using weighted probabilities
     // TODO: The probabilities below do not match the documentation in
