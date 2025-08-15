@@ -21,7 +21,7 @@ jobs:
         uses: akiomik/mado@v0.3.0
       - name: Run tests
         run: |
-          uv test pytest   
+          uv run pytest   
       - name: Cargo clippy
         run: |
           cargo clippy
