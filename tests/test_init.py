@@ -1,13 +1,19 @@
+# ruff: noqa: PLR2004, S101
+
+"""Tests for :func:`akioi_2048.init`."""
+
 import akioi_2048 as ak
 
 ALLOWED = {-2, -1, 2, 4}
 
 
-def flatten(board):
+def flatten(board: list[list[int]]) -> list[int]:
+    """Flatten a board into a single list."""
     return [c for row in board for c in row]
 
 
-def test_init_board():
+def test_init_board() -> None:
+    """Initialize board with two tiles."""
     board = ak.init()
     flat = flatten(board)
     non_zero = [x for x in flat if x]
