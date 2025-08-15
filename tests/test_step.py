@@ -1,4 +1,5 @@
 import akioi_2048 as ak
+import pytest
 
 
 def test_step_smoke():
@@ -85,3 +86,36 @@ def test_number_and_multiplier_no_merge_with_gap():
     assert new_board[2][0] == -2
     assert new_board[3][0] == 16
     assert delta == 0
+
+
+def test_step_rejects_non_power_of_two():
+    board = [
+        [3, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    with pytest.raises(ValueError):
+        ak.step(board, 0)
+
+
+def test_step_rejects_too_large_value():
+    board = [
+        [131072, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    with pytest.raises(ValueError):
+        ak.step(board, 0)
+
+
+def test_step_rejects_unknown_negative_multiplier():
+    board = [
+        [-3, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    with pytest.raises(ValueError):
+        ak.step(board, 0)
