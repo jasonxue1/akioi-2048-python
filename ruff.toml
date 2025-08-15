@@ -6,9 +6,8 @@ select = ["ALL"]
 # 不忽略任何规则
 ignore = []
 
-# 禁止任何文件有特例忽略
-[per-file-ignores]
-"tests/*.py" = ["S101", "PLR2004"]
+
+
 
 
 # 开启所有补充规则集（有些不在默认 ALL 中）
@@ -26,6 +25,9 @@ target-version = "py311"
 
 # 严格行长限制（可按需调整）
 line-length = 80
+
+[per-file-ignores]
+"tests/*.py" = ["S101", "PLR2004"]
 
 # 开启 import 排序（相当于 isort 严格模式）
 [isort]
