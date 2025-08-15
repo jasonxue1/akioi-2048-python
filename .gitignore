@@ -11,3 +11,7 @@
 # Maturin
 *.so
 
+# Lock files
+Cargo.lock
+uv.lock
+
