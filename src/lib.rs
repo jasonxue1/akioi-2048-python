@@ -7,14 +7,8 @@ use rand::{Rng, rng};
 /// 4×4 board grid type
 pub type Board = [[i32; 4]; 4];
 
-trait IsPowerOfTwo {
-    fn is_power_of_two(self) -> bool;
-}
-
-impl IsPowerOfTwo for i32 {
-    fn is_power_of_two(self) -> bool {
-        self > 0 && (self & (self - 1)) == 0
-    }
+fn is_power_of_two(v: i32) -> bool {
+    v > 0 && (v & (v - 1)) == 0
 }
 
 /// Internal move direction enum
@@ -30,12 +24,11 @@ fn validate_board(board: &Board) -> PyResult<()> {
     for row in board.iter() {
         for &v in row.iter() {
             let valid = v == 0
-                || (v >= 2 && v <= 65_536 && v.is_power_of_two())
+                || ((2..=65_536).contains(&v) && is_power_of_two(v))
                 || matches!(v, -1 | -2 | -4);
             if !valid {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                    "invalid tile value: {}",
-                    v
+                    "invalid tile value: {v}"
                 )));
             }
         }
@@ -128,7 +121,6 @@ fn init() -> PyResult<Vec<Vec<i32>>> {
 }
 
 /// ---------- Pure logic ---------------------------------------------------------
-
 /// Return `(new_board, delta_score, victory?)` (no random tile spawn)
 fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
     let rot = match action {
@@ -156,8 +148,8 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
 fn rotate(b: Board, k: usize) -> Board {
     assert!(k < 4, "k must be 0..=3");
     let mut r = [[0; 4]; 4];
-    for i in 0..4 {
-        for j in 0..4 {
+    for (i, row) in b.iter().enumerate() {
+        for (j, &val) in row.iter().enumerate() {
             let (x, y) = match k {
                 0 => (i, j),
                 1 => (j, 3 - i),
@@ -165,7 +157,7 @@ fn rotate(b: Board, k: usize) -> Board {
                 3 => (3 - j, i),
                 _ => unreachable!("k must be 0..=3"),
             };
-            r[x][y] = b[i][j];
+            r[x][y] = val;
         }
     }
     r
@@ -204,18 +196,14 @@ fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
             if let Some((tile, add)) = try_merge(col[i], col[j], i == j + 1, below_slice) {
                 out[w] = tile;
                 score += add;
-                if w > 0 {
-                    w -= 1;
-                }
+                w = w.saturating_sub(1);
                 r = j.checked_sub(1); // skip the merged tile
                 continue;
             }
         }
 
         out[w] = col[i];
-        if w > 0 {
-            w -= 1;
-        }
+        w = w.saturating_sub(1);
         r = i.checked_sub(1);
     }
 
@@ -247,9 +235,9 @@ fn try_merge(a: i32, b: i32, adjacent: bool, below: &[i32]) -> Option<(i32, i32)
 fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
     // ① Gather empty coordinates (avoid closure to skip move)
     let mut empties = Vec::new();
-    for r in 0..4 {
-        for c in 0..4 {
-            if board[r][c] == 0 {
+    for (r, row) in board.iter().enumerate() {
+        for (c, &val) in row.iter().enumerate() {
+            if val == 0 {
                 empties.push((r, c));
             }
         }
