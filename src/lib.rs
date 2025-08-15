@@ -16,12 +16,12 @@ enum Action {
     Right,
 }
 
-
 fn validate_board(board: &Board) -> PyResult<()> {
     for row in board.iter() {
         for &v in row.iter() {
-            let valid =
-                v == 0 || (v > 0 && v <= 65_536 && (v & (v - 1) == 0)) || matches!(v, -1 | -2 | -4);
+            let valid = v == 0
+                || (v >= 2 && v <= 65_536 && (v & (v - 1) == 0))
+                || matches!(v, -1 | -2 | -4);
             if !valid {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
                     "invalid tile value: {}",
@@ -40,7 +40,6 @@ fn validate_board(board: &Board) -> PyResult<()> {
 /// * `2` → **Up**    ↑
 /// * `3` → **Left**  ←
 const IDX_TO_ACTION: [Action; 4] = [Action::Down, Action::Right, Action::Up, Action::Left];
-
 
 /// Apply one move; if the board changes a new tile is spawned at random.
 ///
