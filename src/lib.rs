@@ -16,6 +16,14 @@ enum Action {
     Right,
 }
 
+/// Lookup table for external direction indices.
+///
+/// * `0` → **Down**  ↓
+/// * `1` → **Right** →
+/// * `2` → **Up**    ↑
+/// * `3` → **Left**  ←
+const IDX_TO_ACTION: [Action; 4] = [Action::Down, Action::Right, Action::Up, Action::Left];
+
 /// Apply one move; if the board changes a new tile is spawned at random.
 ///
 /// :param list[list[int]] board:
@@ -56,17 +64,10 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
     }
 
     // ② Map `direction` to `Action`
-    let action = match direction {
-        0 => Action::Down,
-        1 => Action::Right,
-        2 => Action::Up,
-        3 => Action::Left,
-        _ => {
-            return Err(pyo3::exceptions::PyValueError::new_err(
-                "direction must be 0-3",
-            ));
-        }
-    };
+    let action = IDX_TO_ACTION
+        .get(direction as usize)
+        .copied()
+        .ok_or_else(|| pyo3::exceptions::PyValueError::new_err("direction must be 0-3"))?;
 
     let mut rng = rng();
 
@@ -79,7 +80,7 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
     }
 
     // ④ Check failure (no moves in any direction)
-    let dead = !moved && (0..4).all(|d| single_step(&next, idx_to_action(d)).0 == next);
+    let dead = !moved && (0..4).all(|d| single_step(&next, IDX_TO_ACTION[d]).0 == next);
 
     let msg = if victory {
         1
@@ -129,16 +130,6 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
     let next = rotate(work, (4 - rot) % 4);
     let victory = next.iter().flatten().any(|&v| v == 65_536);
     (next, delta, victory)
-}
-
-fn idx_to_action(i: usize) -> Action {
-    match i {
-        0 => Action::Up,
-        1 => Action::Down,
-        2 => Action::Left,
-        3 => Action::Right,
-        _ => unreachable!("index must be 0..=3"),
-    }
 }
 
 /// Rotate board 90°×k clockwise
