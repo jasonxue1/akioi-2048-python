@@ -1,4 +1,4 @@
-# ruff: noqa: PYI021
+# Copyright (c) 2024 akioi
 """Type hints for :mod:`akioi_2048`."""
 
 def step(

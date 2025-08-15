@@ -1,5 +1,4 @@
-
-
+# Copyright (c) 2024 akioi
 """Tests for :func:`akioi_2048.step`."""
 
 import pytest
@@ -112,7 +111,7 @@ def test_step_rejects_non_power_of_two() -> None:
         [0, 0, 0, 0],
         [0, 0, 0, 0],
     ]
-    with pytest.raises(ValueError, match="^invalid tile value: 3$"):
+    with pytest.raises(ValueError, match=r"^invalid tile value: 3$"):
         ak.step(board, 0)
 
 
@@ -124,7 +123,7 @@ def test_step_rejects_too_large_value() -> None:
         [0, 0, 0, 0],
         [0, 0, 0, 0],
     ]
-    with pytest.raises(ValueError, match="^invalid tile value: 131072$"):
+    with pytest.raises(ValueError, match=r"^invalid tile value: 131072$"):
         ak.step(board, 0)
 
 
@@ -136,7 +135,7 @@ def test_step_rejects_unknown_negative_multiplier() -> None:
         [0, 0, 0, 0],
         [0, 0, 0, 0],
     ]
-    with pytest.raises(ValueError, match="^invalid tile value: -3$"):
+    with pytest.raises(ValueError, match=r"^invalid tile value: -3$"):
         ak.step(board, 0)
 
 
@@ -148,5 +147,5 @@ def test_step_rejects_one() -> None:
         [0, 0, 0, 0],
         [0, 0, 0, 0],
     ]
-    with pytest.raises(ValueError, match="^invalid tile value: 1$"):
+    with pytest.raises(ValueError, match=r"^invalid tile value: 1$"):
         ak.step(board, 0)
