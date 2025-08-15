@@ -1,0 +1,43 @@
+# ruff.toml
+
+# 检查所有支持的规则
+select = ["ALL"]
+
+# 不忽略任何规则
+ignore = []
+
+# 禁止任何文件有特例忽略
+per-file-ignores = {}
+
+# 开启所有补充规则集（有些不在默认 ALL 中）
+extend-select = [
+    "NPY",   # numpy 规范
+    "PTH",   # pathlib 替代建议
+    "FLY",   # f-string & lazy 格式化优化
+    "PERF",  # 性能优化建议
+    "TRY",   # try/except 反模式
+    "RUF"    # Ruff 自定义规则
+]
+
+# 检查 Python 版本（确保规则针对你的运行环境）
+target-version = "py311"
+
+# 严格行长限制（可按需调整）
+line-length = 88
+
+# 开启 import 排序（相当于 isort 严格模式）
+[isort]
+combine-as-imports = false
+force-sort-within-sections = true
+order-by-type = true
+
+# docstring 风格检查（Google 或 NumPy，可二选一）
+[pydocstyle]
+convention = "google"
+
+# Flake8 Quotes 配置（统一使用双引号）
+[flake8-quotes]
+inline-quotes = "double"
+multiline-quotes = "double"
+docstring-quotes = "double"
+avoid-escape = true
