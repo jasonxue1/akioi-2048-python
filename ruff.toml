@@ -4,7 +4,7 @@ fix = true
 unsafe-fixes = true
 
 [per-file-ignores]
-"tests/**" = ["S101","D","PLR","ANN"],
+"tests/**" = ["S101","PLR2004"],
 "scripts/**" = ["T201"], 
 
 
