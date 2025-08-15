@@ -6,6 +6,9 @@
 
 ## Development Workflow
 
+- Install `mado` using
+  `cargo install --git https://github.com/akiomik/mado mado` before making
+  changes.
 - Format Rust code with `cargo fmt --all` before committing.
 - Format Python code with `ruff format`.
 - Format Markdown with `npx @fsouza/prettierd`.
