@@ -99,7 +99,7 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
     }
 
     // ④ Check failure (no moves in any direction)
-    let dead = !moved && (0..4).all(|d| single_step(&next, IDX_TO_ACTION[d]).0 == next);
+    let dead = (0..4).all(|d| single_step(&next, IDX_TO_ACTION[d]).0 == next);
 
     let msg = if victory {
         1
@@ -282,7 +282,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "k must be 0..=3")]
+    #[should_panic(expected = "rotations must be 0..=3")]
     fn rotate_panics_on_invalid_k() {
         rotate([[0; 4]; 4], 4);
     }
