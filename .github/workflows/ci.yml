@@ -17,6 +17,14 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           pip install maturin
+      - name: Ruff check
+        run: |
+          uv run --python 3.12 ruff check .
+      - name: Cargo check
+        run: |
+          cargo check --all
+      - name: Mado check
+        uses: akiomik/mado@v0.3.0
       - name: Build extension
         run: |
           uv run --python 3.12 maturin develop --release
