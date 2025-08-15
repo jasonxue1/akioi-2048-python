@@ -40,7 +40,11 @@ all = "deny"                      # Clippy 基础合集
 cargo = "deny"                    # Cargo.toml 相关
 pedantic = "deny"                  # 吹毛求疵模式
 nursery = "deny"                   # 实验性规则
-restriction = "deny"               # 极限限制（包含 unwrap_used 等）
-
-# 注意：restriction 里已含 unwrap_used/expect_used/dbg_macro 等，
-# 不用再单列，避免重复
+unwrap_used = "deny"
+expect_used = "deny"
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+panic = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
