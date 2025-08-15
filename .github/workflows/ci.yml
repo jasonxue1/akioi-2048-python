@@ -31,7 +31,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - run: npx @taplo/cli check
+            - run: |
+                npx @taplo/cli check
+                npx @taplo/cli lint
 
     test:
         name: Pytest (uv)
