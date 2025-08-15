@@ -5,6 +5,7 @@ description = "akioi backend: one-step pure function for RL or search"
 authors = [{ name = "jasonxue" }]
 requires-python = ">=3.8,<3.14"
 readme = "README.md"
+license = {file = "LICENSE"}
 
 [build-system]
 requires = ["maturin>=1.9.3"]
