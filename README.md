@@ -1,6 +1,7 @@
 # akioi-2048
 
-Python implementation of a customizable 2048 engine with multiplier tiles and score tracking. Requires Python 3.8 or later.
+Python implementation of a customizable 2048 engine with multiplier tiles and
+score tracking. Requires Python 3.8 or later.
 
 ## Features
 
@@ -13,23 +14,21 @@ Python implementation of a customizable 2048 engine with multiplier tiles and sc
 
 ### `step(board, direction)`
 
-Apply one move. If the board changes, a new tile is spawned in a random empty cell.
+Apply one move. If the board changes, a new tile is spawned in a random empty
+cell.
 
 #### Parameters
 
 - **`board: list[list[int]]`** – 4×4 board matrix.
-  - Positive integers are normal tiles (2, 4, 8, …)
-  - Negative integers are multiplier tiles:
-    - `-1` = ×1
-    - `-2` = ×2
-    - `-4` = ×4
-      The absolute value is the multiplier.
+    - Positive integers are normal tiles (2, 4, 8, …)
+    - Negative integers are multiplier tiles
+      (`-1` = ×1, `-2` = ×2, `-4` = ×4). The absolute value is the multiplier.
 
 - **`direction: int`** – Movement direction
-  - `0` → **Down** ↓
-  - `1` → **Right** →
-  - `2` → **Up** ↑
-  - `3` → **Left** ←
+    - `0` → **Down** ↓
+    - `1` → **Right** →
+    - `2` → **Up** ↑
+    - `3` → **Left** ←
 
 #### Returns
 
@@ -38,13 +37,14 @@ Tuple **`(new_board, delta_score, state)`**:
 - **`new_board: list[list[int]]`** – Board after the move
 - **`delta_score: int`** – Score gained or lost from merges
 - **`state: int`** – Game state indicator
-  - `1` → Created a 65536 tile → **Victory**
-  - `-1` → No legal moves left → **Game Over**
-  - `0` → Game continues
+    - `1` → Created a 65536 tile → **Victory**
+    - `-1` → No legal moves left → **Game Over**
+    - `0` → Game continues
 
 #### Notes
 
-If the board stays the same, no tile is spawned, `delta_score = 0`, and `state = 0`.
+If the board stays the same, no tile is spawned, `delta_score = 0`, and
+`state = 0`.
 
 ### `init()`
 
