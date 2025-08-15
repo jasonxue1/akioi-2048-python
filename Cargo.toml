@@ -2,6 +2,7 @@
 name = "akioi-2048"
 edition = "2024"
 rust-version = "1.88"
+license = "MIT"
 
 
 [lib]
