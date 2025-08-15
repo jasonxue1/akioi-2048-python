@@ -5,6 +5,10 @@ score tracking. Requires Python 3.8 or later.
 
 ## Features
 
+
+
+
+
 - Classic 2048 mechanics
 - Special multiplier tiles: -1 (×1), -2 (×2), -4 (×4)
 - Supports programmatic interaction for AI training
