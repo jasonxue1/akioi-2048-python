@@ -1,47 +1,34 @@
-# ruff.toml
+# ruff.toml — 全规则 + 预览 + 激进修复
+target-version = "py313"
+fix = true
+unsafe-fixes = true
 
-# 检查所有支持的规则
+per-file-ignores = {
+  "tests/**" = ["S101","D","PLR","ANN"],
+  "scripts/**" = ["T201"], 
+}
+
+
+[lint]
+# 全开
 select = ["ALL"]
+# 你要狠，那就 extend-select 也给 ALL（功能上等价于上面这行）
+extend-select = ["ALL"]
+preview = true
 
-# 不忽略任何规则
-ignore = []
-
-
-
-
-
-# 开启所有补充规则集（有些不在默认 ALL 中）
-extend-select = [
-    "NPY",   # numpy 规范
-    "PTH",   # pathlib 替代建议
-    "FLY",   # f-string & lazy 格式化优化
-    "PERF",  # 性能优化建议
-    "TRY",   # try/except 反模式
-    "RUF"    # Ruff 自定义规则
-]
-
-# 检查 Python 版本（确保规则针对你的运行环境）
-target-version = "py311"
-
-# 严格行长限制（可按需调整）
-line-length = 80
-
-[per-file-ignores]
-"tests/*.py" = ["S101", "PLR2004"]
-
-# 开启 import 排序（相当于 isort 严格模式）
-[isort]
-combine-as-imports = false
+# isort（Ruff 内置）最严倾向配置
+[lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+force-single-line = true
 force-sort-within-sections = true
+from-first = true
+lines-after-imports = 1
+lines-between-types = 1
 order-by-type = true
+relative-imports-order = "closest-to-furthest"
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = ["src"]
 
-# docstring 风格检查（Google 或 NumPy，可二选一）
-[pydocstyle]
+[lint.pydocstyle]
 convention = "google"
-
-# Flake8 Quotes 配置（统一使用双引号）
-[flake8-quotes]
-inline-quotes = "double"
-multiline-quotes = "double"
-docstring-quotes = "double"
-avoid-escape = true
