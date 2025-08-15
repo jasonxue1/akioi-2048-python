@@ -32,12 +32,12 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Install taplo
-              run:                      npm install -g @taplo/cli
+              run: npm install -g @taplo/cli
             - name: Taplo check
               run: |
-                    taplo fmt --check
-                    taplo lint --default-schema-catalogs
-                    taplo check --default-schema-catalogs
+                  taplo fmt --check
+                  taplo lint --default-schema-catalogs
+                  taplo check --default-schema-catalogs
 
     test:
         name: Pytest (uv)
