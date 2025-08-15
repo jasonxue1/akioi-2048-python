@@ -191,44 +191,45 @@ fn rotate(b: Board, k: usize) -> Board {
 /// * Write pointer `w` from 3 down to 0 (always filling bottom up).
 fn slide_column(col: [i32; 4]) -> ([i32; 4], i32) {
     let mut out = [0i32; 4];
-    let mut w: i32 = 3; // write position (bottom to top)
     let mut score = 0;
-    let mut r: i32 = 3; // read pointer (bottom to top)
+    let mut w: usize = 3; // write position (bottom to top)
+    let mut r = Some(3usize); // read pointer (bottom to top)
 
-    while r >= 0 {
+    while let Some(i) = r {
         // skip empty cells
-        if col[r as usize] == 0 {
-            r -= 1;
+        if col[i] == 0 {
+            r = i.checked_sub(1);
             continue;
         }
 
         // find first non-zero above
-        let mut s = r - 1;
-        while s >= 0 && col[s as usize] == 0 {
-            s -= 1;
+        let mut s = i.checked_sub(1);
+        while let Some(j) = s {
+            if col[j] != 0 {
+                break;
+            }
+            s = j.checked_sub(1);
         }
 
-        // try merging r and s
-        let merged = if s >= 0 {
-            let below_slice = &col[(r as usize + 1)..4]; // slice is empty if r=3
-            try_merge(col[r as usize], col[s as usize], r == s + 1, below_slice)
-        } else {
-            None
-        };
-
-        match merged {
-            Some((tile, add)) => {
-                out[w as usize] = tile;
+        // try merging i and s
+        if let Some(j) = s {
+            let below_slice = &col[(i + 1)..4]; // slice is empty if i=3
+            if let Some((tile, add)) = try_merge(col[i], col[j], i == j + 1, below_slice) {
+                out[w] = tile;
                 score += add;
-                w -= 1;
-                r = s - 1; // skip the merged tile
-            }
-            None => {
-                out[w as usize] = col[r as usize];
-                w -= 1;
-                r -= 1;
+                if w > 0 {
+                    w -= 1;
+                }
+                r = j.checked_sub(1); // skip the merged tile
+                continue;
             }
         }
+
+        out[w] = col[i];
+        if w > 0 {
+            w -= 1;
+        }
+        r = i.checked_sub(1);
     }
 
     (out, score)
@@ -303,5 +304,26 @@ mod tests {
     #[should_panic(expected = "k must be 0..=3")]
     fn rotate_panics_on_invalid_k() {
         rotate([[0; 4]; 4], 4);
+    }
+
+    #[test]
+    fn slide_column_merges_across_gap() {
+        let (out, score) = slide_column([2, 0, 0, 2]);
+        assert_eq!(out, [0, 0, 0, 4]);
+        assert_eq!(score, 4);
+    }
+
+    #[test]
+    fn slide_column_merges_multipliers() {
+        let (out, score) = slide_column([-1, -1, -2, -2]);
+        assert_eq!(out, [0, 0, -2, -4]);
+        assert_eq!(score, -6);
+    }
+
+    #[test]
+    fn slide_column_no_merge_for_negative_four() {
+        let (out, score) = slide_column([0, 0, -4, -4]);
+        assert_eq!(out, [0, 0, -4, -4]);
+        assert_eq!(score, 0);
     }
 }
