@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, S101
+
 
 """Tests for :func:`akioi_2048.step`."""
 
