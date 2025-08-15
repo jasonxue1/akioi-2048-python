@@ -7,7 +7,9 @@ select = ["ALL"]
 ignore = []
 
 # 禁止任何文件有特例忽略
-per-file-ignores = {}
+per-file-ignores = {
+    "tests/*.py" = ["S101", "PLR2004"]
+}
 
 # 开启所有补充规则集（有些不在默认 ALL 中）
 extend-select = [
