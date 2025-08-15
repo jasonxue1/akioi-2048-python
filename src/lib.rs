@@ -16,6 +16,22 @@ enum Action {
     Right,
 }
 
+fn validate_board(board: &Board) -> PyResult<()> {
+    for row in board.iter() {
+        for &v in row.iter() {
+            let valid =
+                v == 0 || (v > 0 && v <= 65_536 && (v & (v - 1) == 0)) || matches!(v, -1 | -2 | -4);
+            if !valid {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "invalid tile value: {}",
+                    v
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Apply one move; if the board changes a new tile is spawned at random.
 ///
 /// :param list[list[int]] board:
@@ -54,6 +70,8 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
             board[r][c] = v;
         }
     }
+
+    validate_board(&board)?;
 
     // ② Map `direction` to `Action`
     let action = match direction {
