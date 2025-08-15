@@ -19,15 +19,15 @@ jobs:
           pip install maturin
       - name: Ruff check
         run: |
-          uv run --python 3.12 ruff check .
+          uv run ruff check .
       - name: Cargo check
         run: |
-          cargo check --all
+          cargo clippy
       - name: Mado check
         uses: akiomik/mado@v0.3.0
       - name: Build extension
         run: |
-          uv run --python 3.12 maturin develop --release
+          uv run maturin develop
       - name: Run tests
         run: |
-          uv run --python 3.12 pytest
+          uv run pytest
