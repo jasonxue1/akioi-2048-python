@@ -23,7 +23,7 @@ extend-select = [
 target-version = "py311"
 
 # 严格行长限制（可按需调整）
-line-length = 88
+line-length = 80
 
 # 开启 import 排序（相当于 isort 严格模式）
 [isort]
