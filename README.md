@@ -1,7 +1,7 @@
 # akioi-2048
 
 
-A Python implementation of a customizable 2048 game engine with support for multiplier tiles and score tracking.
+A Python implementation of a customizable 2048 game engine with support for multiplier tiles and score tracking. Requires Python 3.8 or later.
 
 ## Features
 
