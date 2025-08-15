@@ -13,8 +13,8 @@ use rand::{Rng, rng};
 /// 4×4 board grid type
 pub type Board = [[i32; 4]; 4];
 
-fn is_power_of_two(v: i32) -> bool {
-    v > 0 && (v & (v - 1)) == 0
+const fn is_power_of_two(value: i32) -> bool {
+    value > 0 && (value & (value - 1)) == 0
 }
 
 /// Internal move direction enum
@@ -27,14 +27,14 @@ enum Action {
 }
 
 fn validate_board(board: &Board) -> PyResult<()> {
-    for row in board.iter() {
-        for &v in row.iter() {
-            let valid = v == 0
-                || ((2..=65_536).contains(&v) && is_power_of_two(v))
-                || matches!(v, -1 | -2 | -4);
+    for row in board {
+        for &tile in row {
+            let valid = tile == 0
+                || ((2..=65_536).contains(&tile) && is_power_of_two(tile))
+                || matches!(tile, -1 | -2 | -4);
             if !valid {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                    "invalid tile value: {v}"
+                    "invalid tile value: {tile}"
                 )));
             }
         }
@@ -117,13 +117,13 @@ fn step(py_board: &Bound<'_, PyAny>, direction: u8) -> PyResult<(Vec<Vec<i32>>, 
 /// :returns: *new_board*
 ///     * **new_board** `list[list[int]]` A fresh board
 #[pyfunction]
-fn init() -> PyResult<Vec<Vec<i32>>> {
+fn init() -> Vec<Vec<i32>> {
     let mut rng = rng();
     let mut board: Board = [[0; 4]; 4];
     spawn_tile(&mut board, &mut rng);
     spawn_tile(&mut board, &mut rng);
 
-    Ok(board.iter().map(|r| r.to_vec()).collect())
+    board.iter().map(|r| r.to_vec()).collect()
 }
 
 /// ---------- Pure logic ---------------------------------------------------------
@@ -151,22 +151,22 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
 }
 
 /// Rotate board 90°×k clockwise
-fn rotate(b: Board, k: usize) -> Board {
-    assert!(k < 4, "k must be 0..=3");
-    let mut r = [[0; 4]; 4];
-    for (i, row) in b.iter().enumerate() {
-        for (j, &val) in row.iter().enumerate() {
-            let (x, y) = match k {
-                0 => (i, j),
-                1 => (j, 3 - i),
-                2 => (3 - i, 3 - j),
-                3 => (3 - j, i),
-                _ => unreachable!("k must be 0..=3"),
+fn rotate(board: Board, rotations: usize) -> Board {
+    assert!(rotations < 4, "rotations must be 0..=3");
+    let mut rotated = [[0; 4]; 4];
+    for (src_row_idx, row) in board.iter().enumerate() {
+        for (src_col_idx, &val) in row.iter().enumerate() {
+            let (dest_row_idx, dest_col_idx) = match rotations {
+                0 => (src_row_idx, src_col_idx),
+                1 => (src_col_idx, 3 - src_row_idx),
+                2 => (3 - src_row_idx, 3 - src_col_idx),
+                3 => (3 - src_col_idx, src_row_idx),
+                _ => unreachable!("rotations must be 0..=3"),
             };
-            r[x][y] = val;
+            rotated[dest_row_idx][dest_col_idx] = val;
         }
     }
-    r
+    rotated
 }
 
 /// Process one column: scan upward, merge, and drop tiles.
@@ -271,9 +271,9 @@ fn spawn_tile<R: Rng>(board: &mut Board, rng: &mut R) {
 }
 
 #[pymodule]
-fn akioi_2048(_py: Python, m: Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(step, &m)?)?;
-    m.add_function(wrap_pyfunction!(init, &m)?)?;
+fn akioi_2048(_py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(step, module)?)?;
+    module.add_function(wrap_pyfunction!(init, module)?)?;
     Ok(())
 }
 
