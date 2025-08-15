@@ -154,35 +154,21 @@ fn single_step(board: &Board, action: Action) -> (Board, i32, bool) {
 
 /// Rotate board 90°×k clockwise
 fn rotate(b: Board, k: usize) -> Board {
+    assert!(k < 4, "k must be 0..=3");
     let mut r = [[0; 4]; 4];
-    match k {
-        0 => b,
-        1 => {
-            for i in 0..4 {
-                for j in 0..4 {
-                    r[j][3 - i] = b[i][j];
-                }
-            }
-            r
+    for i in 0..4 {
+        for j in 0..4 {
+            let (x, y) = match k {
+                0 => (i, j),
+                1 => (j, 3 - i),
+                2 => (3 - i, 3 - j),
+                3 => (3 - j, i),
+                _ => unreachable!("k must be 0..=3"),
+            };
+            r[x][y] = b[i][j];
         }
-        2 => {
-            for i in 0..4 {
-                for j in 0..4 {
-                    r[3 - i][3 - j] = b[i][j];
-                }
-            }
-            r
-        }
-        3 => {
-            for i in 0..4 {
-                for j in 0..4 {
-                    r[3 - j][i] = b[i][j];
-                }
-            }
-            r
-        }
-        _ => unreachable!("k must be 0..=3"),
     }
+    r
 }
 
 /// Process one column: scan upward, merge, and drop tiles.
