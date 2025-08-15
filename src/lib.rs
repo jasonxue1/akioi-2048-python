@@ -248,7 +248,8 @@ fn try_merge(a: i32, b: i32, adjacent: bool, below: &[i32]) -> Option<(i32, i32)
     if a * b < 0 && adjacent && (below.is_empty() || below.iter().all(|&v| v != 0)) {
         let num = if a > 0 { a } else { b };
         let mul = if a < 0 { a } else { b };
-        let v = num * mul.abs();
+        let mut v = num * mul.abs();
+        v = v.min(65_536);
         return Some((v, v));
     }
     None
