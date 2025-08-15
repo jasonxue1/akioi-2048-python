@@ -3,10 +3,10 @@ target-version = "py313"
 fix = true
 unsafe-fixes = true
 
-per-file-ignores = {
-  "tests/**" = ["S101","D","PLR","ANN"],
-  "scripts/**" = ["T201"], 
-}
+[per-file-ignores]
+"tests/**" = ["S101","D","PLR","ANN"],
+"scripts/**" = ["T201"], 
+
 
 
 [lint]
