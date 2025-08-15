@@ -1,4 +1,3 @@
-# Copyright (c) 2024 akioi
 """Tests for :func:`akioi_2048.init`."""
 
 import akioi_2048 as ak

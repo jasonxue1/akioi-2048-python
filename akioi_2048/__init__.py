@@ -1,4 +1,3 @@
-# Copyright (c) 2024 akioi
 """Python bindings for the 2048 engine."""
 
 from .akioi_2048 import init
