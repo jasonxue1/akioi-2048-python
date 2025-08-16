@@ -1,4 +1,3 @@
-
 target-version = "py313"
 fix = true
 unsafe-fixes = true
@@ -9,9 +8,7 @@ unsafe-fixes = true
 
 
 [lint]
-
 select = ["ALL"]
-
 extend-select = ["ALL"]
 preview = true
 ignore = ["CPY001"]
@@ -35,6 +32,12 @@ section-order = [
   "local-folder",
 ]
 known-first-party = ["src"]
+
+
+
+
+
+
 
 [lint.pydocstyle]
 convention = "google"
